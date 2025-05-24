@@ -40,16 +40,14 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
-
-
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // CSRF 비활성화
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/logout","/auth/refresh","/search").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login", "/auth/logout",
+                                "/auth/refresh","/search").permitAll()
                         .requestMatchers("/board/**").authenticated()
                         .anyRequest().authenticated()
                 )

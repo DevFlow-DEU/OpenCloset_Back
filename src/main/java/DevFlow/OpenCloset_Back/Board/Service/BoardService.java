@@ -4,6 +4,7 @@ import DevFlow.OpenCloset_Back.Board.Repository.BoardRepository;
 import DevFlow.OpenCloset_Back.Board.dto.req.BoardCreateRequestDto;
 import DevFlow.OpenCloset_Back.Board.dto.res.BoardCreateResponsetDto;
 import DevFlow.OpenCloset_Back.Board.entity.Board;
+import DevFlow.OpenCloset_Back.User.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +25,12 @@ public class BoardService {
     }
 
     @Transactional
-    public BoardCreateResponsetDto createBoard(BoardCreateRequestDto req){
-        Board board = new Board(req);
+    public BoardCreateResponsetDto createBoard(BoardCreateRequestDto req, User user){
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        Board board = new Board(req,user);
         boardRepository.save(board);
         return new BoardCreateResponsetDto(board);
     }

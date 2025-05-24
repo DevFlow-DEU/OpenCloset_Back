@@ -34,10 +34,18 @@ public class UserService {
         userRepository.save(user);
 
 
+
         return new UserResponeDto(
                 user.getUsername(),
                 user.getAddress(),
                 user.getName(),
                 user.getAge());
+
+
+    }
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
 }
+

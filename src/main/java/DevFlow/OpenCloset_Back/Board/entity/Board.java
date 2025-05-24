@@ -1,6 +1,7 @@
 package DevFlow.OpenCloset_Back.Board.entity;
 
 import DevFlow.OpenCloset_Back.Board.dto.req.BoardCreateRequestDto;
+import DevFlow.OpenCloset_Back.User.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -52,7 +53,11 @@ public class Board implements Serializable { //게시물 id
     @LastModifiedDate
     private LocalDateTime modifiedAt;
 
-    public Board(BoardCreateRequestDto req){
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public Board(BoardCreateRequestDto req, User user){
         this.title = req.getTitle();
         this.description = req.getDescription();
         this.sex = req.getSex();
@@ -62,5 +67,6 @@ public class Board implements Serializable { //게시물 id
         this.price = req.getPrice();
         this.date = req.getDate();
         this.category = req.getCategory();
+        this.user = user;
     }
 }
