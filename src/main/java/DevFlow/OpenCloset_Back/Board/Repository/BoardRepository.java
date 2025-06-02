@@ -12,6 +12,7 @@ import java.util.List;
 public interface BoardRepository extends JpaRepository<Board, Long> {
     List<Board> findAllByOrderByModifiedAtDesc();
     List<Board> findByUser_Address(String address);
+    List<Board> findByUser_AddressOrderByModifiedAtDesc(String address);
 
     @Query("SELECT b FROM Board b " +
             "WHERE (:title IS NULL OR LOWER(b.title) LIKE LOWER(CONCAT('%', :title, '%'))) " +

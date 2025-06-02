@@ -24,9 +24,17 @@ public class BoarController {
     private static final Logger logger = LoggerFactory.getLogger(BoarController.class);
 
 
-    @GetMapping("/board/All")   //모든 게시물 조회
-    public List<BoardCreateResponsetDto> getPosts() {
-        return boardService.getPosts();
+    @GetMapping("/board/All")
+    public List<BoardCreateResponsetDto> getPosts(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        // 1. 로그인 유저의 username 추출
+        String username = userDetails.getUsername();
+
+        // 2. username으로 User 엔티티 조회 (UserService 활용)
+        User loginUser = userService.findByUsername(username);
+
+        // 3. 해당 유저의 address로 게시글 조회
+        return boardService.getPostsByAddress(loginUser.getAddress());
     }
 
     @PostMapping("/board/create")

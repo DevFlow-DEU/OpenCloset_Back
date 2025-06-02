@@ -40,7 +40,14 @@ public class BoardService {
                 () -> new IllegalArgumentException("아이디가 존재하지않습니다.")
         );
     }
-    
+
+    @Transactional(readOnly = true)
+    public List<BoardCreateResponsetDto> getPostsByAddress(String address) {
+        return boardRepository.findByUser_AddressOrderByModifiedAtDesc(address)
+                .stream()
+                .map(BoardCreateResponsetDto::new)
+                .toList();
+    }
 
 
 }
