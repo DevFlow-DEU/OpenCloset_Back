@@ -53,7 +53,7 @@ public class Board implements Serializable { //게시물 id
     @LastModifiedDate
     private LocalDateTime modifiedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne()//fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 

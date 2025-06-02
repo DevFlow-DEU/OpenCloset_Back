@@ -21,7 +21,7 @@ public class BoardCreateResponsetDto {
         this.description = entity.getDescription();
         this.image = entity.getImage();
         this.size = entity.getSize();
-      // this.sex = entity.getSex();
+        //this.sex = entity.getSex();
         this.place = entity.getPlace();
     }
 }
