@@ -3,7 +3,15 @@ package DevFlow.OpenCloset_Back.Board.Controller;
 import DevFlow.OpenCloset_Back.Board.Service.BoardService;
 import DevFlow.OpenCloset_Back.Board.dto.req.BoardCreateRequestDto;
 import DevFlow.OpenCloset_Back.Board.dto.res.*;
+import DevFlow.OpenCloset_Back.Security.CustomUserDetailsService;
+import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
+import DevFlow.OpenCloset_Back.User.User_Service.UserService;
+import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,15 +21,35 @@ import java.util.List;
 @RequestMapping("/board")
 public class BoardController {
     private final BoardService boardService;
+    private final UserRepository userRepository;
+    private final UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
+    private final CustomUserDetailsService customUserDetailsService;
+
 
     @GetMapping("/All")   //모든 게시물 조회
-    public List<BoardCreateResponsetDto> getPosts() {
-        return boardService.getPosts();
+    public List<BoardCreateResponsetDto> getPosts(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails != null) {
+            String username = userDetails.getUsername();
+            User loginUser = userService.findByUsername(username);
+            return boardService.getPostsByAddress(loginUser.getAddress());
+        } else {
+            // 로그인 안 한 경우 전체 게시글 반환 (원하면 아래 주석 해제)
+            return boardService.getPosts();
+            //throw new IllegalArgumentException("로그인이 필요합니다.");
+        }
     }
 
     @PostMapping("/create")
-    public BoardCreateResponsetDto createBoard(@RequestBody BoardCreateRequestDto requestDto) {
-        return boardService.createBoard(requestDto);
+    public BoardCreateResponsetDto createBoard(@RequestBody BoardCreateRequestDto requestDto, @AuthenticationPrincipal UserDetails userDetails) {
+
+        String username = userDetails.getUsername();
+        logger.info("인증된 유저명: {}", username);
+
+        User loginUser = userService.findByUsername(username);
+        logger.info("조회된 유저 ID: {}", loginUser.getId());
+
+        return boardService.createBoard(requestDto,loginUser);
     }
 
     @GetMapping("/{id}")  //게시물 지정 조회

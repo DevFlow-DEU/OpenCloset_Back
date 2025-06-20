@@ -21,43 +21,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public JwtAuthenticationFilter(CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
     }
-    // JwtUtil 메서드들은 static으로 만들었기 때문에 바로 사용 가능
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
-        String requestURI = request.getRequestURI();
-
-        // 인증이 필요 없는 경로는 필터 적용하지 않음
-        if (requestURI.startsWith("/auth")
-                || requestURI.startsWith("/search")
-                || requestURI.startsWith("/api")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
         String authHeader = request.getHeader("Authorization");
 
+        // 1. 헤더 검증
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7); // "Bearer " 이후 토큰만 추출
-        String username = JwtUtil.extractUsername(token); // 토큰에서 username 추출
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        // 2. 토큰 추출
+        String token = authHeader.substring(7);
+        try {
+            // 3. 토큰 유효성 검증
             if (JwtUtil.validateToken(token)) {
+                String username = JwtUtil.extractUsername(token);
+
                 var userDetails = customUserDetailsService.loadUserByUsername(username);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                // 5. 권한 정보 포함한 인증 객체 생성
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities() // 권한 정보 추가
+                );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
+                // 6. SecurityContext에 인증 정보 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+        } catch (Exception e) {
+            // 토큰 검증 실패 시 로깅 (실무에선 추가 처리 필요)
+            logger.error("JWT 토큰 검증 실패: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

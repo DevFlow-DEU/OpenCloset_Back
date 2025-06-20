@@ -18,7 +18,7 @@ public class SearchService {
         this.boardRepository = boardRepository;
     }
 
-    public List<BoardSearchResponseDto> searchBoards(BoardSearchRequestDto req) {
+    public List<BoardSearchResponseDto> searchBoards(BoardSearchRequestDto req,String address) {
         System.out.println("title: '" + req.getTitle() + "'");
         System.out.println("desc : '" + req.getDescription() + "'");
         //System.out.println("sex: '" + req.getSex() + "'");
@@ -30,8 +30,10 @@ public class SearchService {
                     emptyToNull(req.getTitle()),
                     emptyToNull(req.getDescription()),
                     emptyToNull(req.getSize()),
-                    emptyToNull(req.getPlace())
+                    emptyToNull(req.getPlace()),
+                    address
             );
+
 
             System.out.println("검색 결과 개수: " + results.size());
 

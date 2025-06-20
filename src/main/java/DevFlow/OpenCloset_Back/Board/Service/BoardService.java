@@ -5,6 +5,7 @@ import DevFlow.OpenCloset_Back.Board.dto.res.*;
 import DevFlow.OpenCloset_Back.Board.entity.*;
 import DevFlow.OpenCloset_Back.Board.Repository.BoardRepository;
 import DevFlow.OpenCloset_Back.Board.entity.Board;
+import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,9 +70,10 @@ public class BoardService {
         }
 
         @Transactional
-        public BoardCreateResponsetDto createBoard (BoardCreateRequestDto req){
-            Board board = new Board(req);
+        public BoardCreateResponsetDto createBoard (BoardCreateRequestDto req,User user){
+            Board board = new Board(req,user);
             boardRepository.save(board);
+
 
             if (req.getCategory().equals("top")) {   //상의
                 Top top = new Top(board);
@@ -100,10 +102,21 @@ public class BoardService {
 
             return new BoardCreateResponsetDto(board);
         }
+    @Transactional(readOnly = true)
+    public List<BoardCreateResponsetDto> getPostsByAddress(String address) {
+        return boardRepository.findByUser_AddressOrderByModifiedAtDesc(address)
+                .stream()
+                .map(BoardCreateResponsetDto::new)
+                .toList();
+    }
         @Transactional
         public BoardCreateResponsetDto getPost (Long id){
             return boardRepository.findById(id).map(BoardCreateResponsetDto::new).orElseThrow(
                     () -> new IllegalArgumentException("아이디가 존재하지않습니다.")
             );
         }
+
+
+
     }
+
