@@ -18,13 +18,13 @@ public class User {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String username; // 아이디
+    private String email; // 아이디겸 이메일
 
     @Column(nullable = false)
     private String password; // 비밀번호
 
     @Column(nullable = false)
-    private String name; // 이름
+    private String nickname; // 이름
 
     @Column(nullable = false)
     private String address; // 주소
