@@ -25,8 +25,8 @@ public class UserService {
         String encryptedPassword = passwordEncoder.encode(requestDto.getPassword());
 
         User user = new User();
-        user.setUsername(requestDto.getUsername());
-        user.setName(requestDto.getName());
+        user.setEmail(requestDto.getEmail());
+        user.setNickname(requestDto.getNickname());
         user.setPassword(encryptedPassword);
         user.setAddress(requestDto.getAddress());
         user.setAge(requestDto.getAge());
@@ -34,14 +34,14 @@ public class UserService {
         userRepository.save(user);
 
         return new UserResponeDto(
-                user.getUsername(),
+                user.getEmail(),
                 user.getAddress(),
-                user.getName(),
+                user.getNickname(),
                 user.getAge());
     }
-    public User findByUsername(String username) {
-        return userRepository.findByUsername(username)
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
 }
-

@@ -24,28 +24,27 @@ public class LoginService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     public LoginResponseDto loginUser(LoginRequestDto requestDto) {
-        Optional<User> optionalUser = userRepository.findByUsername(requestDto.getUsername());
+        Optional<User> optionalUser = userRepository.findByEmail(requestDto.getEmail());
 
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
                 // 로그인한 유저에게 role 부여 (현재는 기본적으로 ROLE_USER로 고정)
-                String accessToken = JwtUtil.generateToken(user.getUsername(), "ROLE_USER");
+                String accessToken = JwtUtil.generateToken(user.getEmail(), "ROLE_USER");
                 String refreshToken = UUID.randomUUID().toString();
 
-                refreshTokenService.saveRefreshToken(user.getUsername(), refreshToken);
+                refreshTokenService.saveRefreshToken(user.getEmail(), refreshToken);
 
                 return new LoginResponseDto(
-                        user.getUsername(),
-                        user.getName(),
+                        user.getEmail(),
+                        user.getNickname(),
                         "Login successful",
                         accessToken,
-                        refreshToken
-                );
+                        refreshToken);
             }
         }
 
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
     }
 
     public void logoutUser(HttpSession session) {

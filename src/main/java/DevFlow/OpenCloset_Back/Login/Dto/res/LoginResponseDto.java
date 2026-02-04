@@ -6,15 +6,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LoginResponseDto {
-    private String username;
-    private String name;
+    private String email;
+    private String nickname;
     private String message;
     private String accessToken;
     private String refreshToken;
 
-    public LoginResponseDto(String username, String name, String message, String accessToken, String refreshToken) {
-        this.username = username;
-        this.name = name;
+    public LoginResponseDto(String email, String nickname, String message, String accessToken, String refreshToken) {
+        this.email = email;
+        this.nickname = nickname;
         this.message = message;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;

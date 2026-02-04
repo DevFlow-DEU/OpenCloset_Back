@@ -24,14 +24,14 @@ public class SearchController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<List<BoardSearchResponseDto>> searchBoards(@RequestBody BoardSearchRequestDto request, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<BoardSearchResponseDto>> searchBoards(@RequestBody BoardSearchRequestDto request,
+            @AuthenticationPrincipal UserDetails userDetails) {
         System.out.println("SearchController 호출됨: " + request.getTitle());
 
-        User loginUser = userService.findByUsername(userDetails.getUsername());
+        User loginUser = userService.findByEmail(userDetails.getUsername());
         String address = loginUser.getAddress();
-        List<BoardSearchResponseDto> result = searchService.searchBoards(request,address);
+        List<BoardSearchResponseDto> result = searchService.searchBoards(request, address);
         return ResponseEntity.ok(result);
     }
-
 
 }

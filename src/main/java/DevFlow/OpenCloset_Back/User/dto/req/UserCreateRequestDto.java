@@ -7,12 +7,10 @@ import lombok.Setter;
 @Setter
 
 public class UserCreateRequestDto {
-    private String username;
-    private String name;
+    private String email;
+    private String nickname;
     private String password;
     private String address;
     private String age;
 
 }
-
-

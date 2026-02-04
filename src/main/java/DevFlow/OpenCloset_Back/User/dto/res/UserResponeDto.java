@@ -7,15 +7,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserResponeDto {
-    private String username;
-    private String name;
+    private String email;
+    private String nickname;
     private String address;
     private String age;
 
-    public UserResponeDto(String username, String address, String name, String age) {
-        this.username = username;
+    public UserResponeDto(String email, String address, String nickname, String age) {
+        this.email = email;
         this.address = address;
-        this.name = name;
+        this.nickname = nickname;
         this.age = age;
     }
 }

@@ -26,12 +26,12 @@ public class TokenRefreshController {
 
         return refreshTokenService.findByToken(refreshToken)
                 .map(token -> {
-                    // username으로 유저 찾기
-                    User user = userRepository.findByUsername(token.getUsername())
+                    // email로 유저 찾기
+                    User user = userRepository.findByEmail(token.getUsername())
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
                     // 새 access token 생성 (role 포함)
-                    String newAccessToken = JwtUtil.generateToken(user.getUsername(), "ROLE_USER");
+                    String newAccessToken = JwtUtil.generateToken(user.getEmail(), "ROLE_USER");
 
                     return ResponseEntity.ok(new TokenRefreshResponseDto(newAccessToken));
                 })
