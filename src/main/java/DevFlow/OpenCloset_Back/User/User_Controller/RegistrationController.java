@@ -5,6 +5,7 @@ import DevFlow.OpenCloset_Back.User.dto.req.UserCreateRequestDto;
 import DevFlow.OpenCloset_Back.User.dto.res.UserResponeDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,8 +28,11 @@ public class RegistrationController {
     @Operation(summary = "회원가입", description = "신규 사용자를 등록. 이메일, 닉네임, 비밀번호, 주소, 나이 정보가 필요.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "회원가입 성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponeDto.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 (필수 필드 누락 또는 유효하지 않은 데이터)", content = @Content),
-            @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일 또는 닉네임", content = @Content)
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (필수 필드 누락 또는 유효하지 않은 데이터)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "필수 필드 누락", value = "{\"status\": 400, \"message\": \"이메일은 필수 입력 항목입니다.\", \"timestamp\": \"2026-02-04T15:40:00\"}"))),
+            @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일 또는 닉네임", content = @Content(mediaType = "application/json", examples = {
+                    @ExampleObject(name = "이메일 중복", value = "{\"status\": 409, \"message\": \"이미 사용 중인 이메일입니다.\", \"timestamp\": \"2026-02-04T15:40:00\"}"),
+                    @ExampleObject(name = "닉네임 중복", value = "{\"status\": 409, \"message\": \"이미 사용 중인 닉네임입니다.\", \"timestamp\": \"2026-02-04T15:40:00\"}")
+            }))
     })
     @PostMapping("/register")
     public ResponseEntity<UserResponeDto> registerUser(@RequestBody UserCreateRequestDto requestDto) {
