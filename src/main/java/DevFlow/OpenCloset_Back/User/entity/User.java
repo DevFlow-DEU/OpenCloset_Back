@@ -32,4 +32,4 @@ public class User {
     @Column(nullable = false)  // 나이
     private String age;
 }
-
+ 

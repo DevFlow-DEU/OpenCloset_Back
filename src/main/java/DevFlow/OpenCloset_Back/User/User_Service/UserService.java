@@ -1,8 +1,5 @@
 package DevFlow.OpenCloset_Back.User.User_Service;
 
-import DevFlow.OpenCloset_Back.Login.Dto.req.LoginRequestDto;
-import DevFlow.OpenCloset_Back.Login.Dto.res.LoginResponseDto;
-import DevFlow.OpenCloset_Back.Login.Jwt_Util.JwtUtil;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.dto.req.UserCreateRequestDto;
 import DevFlow.OpenCloset_Back.User.dto.res.UserResponeDto;
@@ -10,8 +7,6 @@ import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +16,11 @@ public class UserService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     public UserResponeDto registerUser(UserCreateRequestDto requestDto) {
+        // 이메일 중복 체크
+        if (userRepository.findByEmail(requestDto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+
         // 비밀번호 암호화
         String encryptedPassword = passwordEncoder.encode(requestDto.getPassword());
 
