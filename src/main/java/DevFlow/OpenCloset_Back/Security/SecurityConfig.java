@@ -19,7 +19,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
-
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
@@ -32,6 +31,7 @@ public class SecurityConfig {
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -58,8 +58,6 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -68,11 +66,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/logout","/auth/refresh","/search","/api/**").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/refresh", "/search",
+                                "/api/**")
+                        .permitAll()
                         .requestMatchers("/auth/**", "/search", "/error").permitAll()
+                        // Swagger UI 허용
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/board/**").authenticated()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(((request, response, authException) -> {
                             response.setStatus(401);
@@ -81,8 +82,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(((request, response, accessDeniedException) -> {
                             response.setStatus(403);
                             response.getWriter().write("Access Denied: " + accessDeniedException.getMessage());
-                        }))
-                )
+                        })))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
