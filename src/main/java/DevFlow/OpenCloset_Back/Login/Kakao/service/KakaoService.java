@@ -29,6 +29,9 @@ public class KakaoService {
     @Value("${kakao.client-id}")
     private String clientId;
 
+    @Value("${kakao.client-secret}")
+    private String clientSecret;
+
     @Value("${kakao.redirect-uri}")
     private String redirectUri;
 
@@ -43,6 +46,7 @@ public class KakaoService {
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .bodyValue("grant_type=authorization_code"
                         + "&client_id=" + clientId
+                        + "&client_secret=" + clientSecret
                         + "&redirect_uri=" + redirectUri
                         + "&code=" + code)
                 .retrieve()
