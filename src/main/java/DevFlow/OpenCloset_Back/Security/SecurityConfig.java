@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/refresh", "/search",
                                 "/api/**")
                         .permitAll()
-                        .requestMatchers("/auth/**", "/search", "/error").permitAll()
+                        .requestMatchers("/auth/**", "/auth/kakao/**", "/search", "/error").permitAll()
                         // Swagger UI 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/board/**").authenticated()

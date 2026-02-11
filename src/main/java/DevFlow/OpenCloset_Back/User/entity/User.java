@@ -1,6 +1,5 @@
 package DevFlow.OpenCloset_Back.User.entity;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,7 +28,6 @@ public class User {
     @Column(nullable = false)
     private String address; // 주소
 
-    @Column(nullable = false)  // 나이
+    @Column(nullable = false) // 나이
     private String age;
 }
- 
