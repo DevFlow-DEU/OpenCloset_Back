@@ -1,0 +1,23 @@
+# Git 관련
+.git
+.gitignore
+
+# IDE 설정
+*.iml
+.idea/
+.vscode/
+
+# 빌드 결과물
+out/
+*.class
+
+# OS/Editor 불필요 파일
+.DS_Store
+Thumbs.db
+
+# 테스트 소스
+**/test/
+**/__pycache__/
+
+# Dockerfile 자체 무시 (빌드에는 포함되지만 COPY 등에 사용되지 않도록)
+Dockerfile
