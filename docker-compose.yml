@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # 데이터베이스 서비스
+  db:
+    image: mariadb:latest
+    container_name: opencloset-db
+    restart: always
+    env_file: .env
+    environment:
+      # .env에 정의한 변수를 사용합니다.
+      MARIADB_DATABASE: OpenCloset
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mariadb_data:/var/lib/mysql
+
+  # 스프링 부트 애플리케이션 서비스
+  app:
+    build: .
+    container_name: opencloset-app
+    restart: always
+    # DB가 먼저 뜬 다음에 앱이 뜨도록 설정
+    depends_on:
+      - db
+    ports:
+      - "7080:7080"
+    env_file: .env
+    environment:
+      # [중요] 컨테이너 환경에서는 localhost가 아닌 서비스 이름(db)으로 접속해야 합니다.
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OpenCloset?createDatabaseIfNotExist=true
