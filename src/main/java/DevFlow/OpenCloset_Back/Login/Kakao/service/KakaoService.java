@@ -37,9 +37,6 @@ public class KakaoService {
 
     private final WebClient webClient = WebClient.builder().build();
 
-    /**
-     * 1단계: 인가 코드로 카카오 액세스 토큰 요청
-     */
     public String getAccessToken(String code) {
         KakaoTokenResponseDto tokenResponse = webClient.post()
                 .uri("https://kauth.kakao.com/oauth/token")
@@ -61,9 +58,6 @@ public class KakaoService {
         return tokenResponse.getAccessToken();
     }
 
-    /**
-     * 2단계: 액세스 토큰으로 카카오 사용자 정보 조회
-     */
     public KakaoUserInfoDto getUserInfo(String accessToken) {
         KakaoUserInfoDto userInfo = webClient.get()
                 .uri("https://kapi.kakao.com/v2/user/me")
@@ -80,9 +74,6 @@ public class KakaoService {
         return userInfo;
     }
 
-    /**
-     * 3단계: 카카오 사용자 정보로 로그인 또는 자동 회원가입 처리
-     */
     public LoginResponseDto loginOrRegister(KakaoUserInfoDto kakaoUserInfo) {
         String kakaoId = String.valueOf(kakaoUserInfo.getId());
         String email = kakaoUserInfo.getEmail();
@@ -97,7 +88,14 @@ public class KakaoService {
         KakaoUser kakaoUser;
         if (existingUser.isPresent()) {
             kakaoUser = existingUser.get();
-            log.info("기존 카카오 사용자 로그인 - kakaoId: {}", kakaoId);
+            if (email != null && !email.equals(kakaoUser.getEmail())) {
+                kakaoUser.setEmail(email);
+            }
+            if (nickname != null && !nickname.equals(kakaoUser.getNickname())) {
+                kakaoUser.setNickname(nickname);
+            }
+            kakaoUserRepository.save(kakaoUser);
+            log.info("기존 카카오 사용자 로그인 - kakaoId: {}, email: {}", kakaoId, email);
         } else {
             kakaoUser = KakaoUser.builder()
                     .kakaoId(kakaoId)
