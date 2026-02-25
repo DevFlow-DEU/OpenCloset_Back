@@ -2,7 +2,7 @@ name: CI/CD Pipeline (Direct Build)
 
 on:
   push:
-    branches: [ "jin_part" ] # main 브랜치에 코드가 올라오면 자동 실행
+    branches: [ "main", "jin_part" ] # main 브랜치에 코드가 올라오면 자동 실행
 
 jobs:
   deploy:
