@@ -23,7 +23,7 @@ services:
     depends_on:
       - db
     ports:
-      - "7080:7080"
+      - "7080:8080"
     env_file: .env
     environment:
       # [중요] 컨테이너 환경에서는 localhost가 아닌 서비스 이름(db)으로 접속해야 합니다.
