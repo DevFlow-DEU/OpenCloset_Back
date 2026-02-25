@@ -8,12 +8,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+
+    private static final String UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String LOWER = "abcdefghijklmnopqrstuvwxyz";
+    private static final String DIGITS = "0123456789";
+    private static final String SPECIAL = "!@#$%^&*_";
+    private static final String ALL_CHARS = UPPER + LOWER + DIGITS + SPECIAL;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public UserResponeDto registerUser(UserCreateRequestDto requestDto) {
         // 이메일 중복 체크
@@ -45,8 +55,43 @@ public class UserService {
                 user.getAge());
     }
 
+    public void resetPassword(String email) {
+        User user = findByEmail(email);
+
+        String tempPassword = generateTempPassword();
+
+        user.setPassword(passwordEncoder.encode(tempPassword));
+        userRepository.save(user);
+
+        emailService.sendTemporaryPassword(email, tempPassword);
+    }
+
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    }
+
+    private String generateTempPassword() {
+        StringBuilder sb = new StringBuilder(10);
+        // 각 문자 유형에서 최소 1개씩 보장
+        sb.append(UPPER.charAt(RANDOM.nextInt(UPPER.length())));
+        sb.append(LOWER.charAt(RANDOM.nextInt(LOWER.length())));
+        sb.append(DIGITS.charAt(RANDOM.nextInt(DIGITS.length())));
+        sb.append(SPECIAL.charAt(RANDOM.nextInt(SPECIAL.length())));
+
+        // 나머지 6자리는 전체 문자 풀에서 랜덤
+        for (int i = 4; i < 10; i++) {
+            sb.append(ALL_CHARS.charAt(RANDOM.nextInt(ALL_CHARS.length())));
+        }
+
+        // 셔플하여 패턴 예측 방지
+        char[] chars = sb.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = RANDOM.nextInt(i + 1);
+            char temp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = temp;
+        }
+        return new String(chars);
     }
 }
