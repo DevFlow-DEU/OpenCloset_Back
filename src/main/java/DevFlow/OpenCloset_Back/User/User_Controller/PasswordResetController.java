@@ -20,7 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@Tag(name = "비밀번호 재설정", description = "임시 비밀번호 발급 및 이메일 전송 API")
+@Tag(name = "임시 비밀번호 발급 (이메일)", description = "임시 비밀번호 발급 및 이메일 전송 API")
 public class PasswordResetController {
 
     private final UserService userService;

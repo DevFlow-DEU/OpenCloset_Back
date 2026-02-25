@@ -73,7 +73,6 @@ public class UserService {
 
     private String generateTempPassword() {
         StringBuilder sb = new StringBuilder(10);
-        // 각 문자 유형에서 최소 1개씩 보장
         sb.append(UPPER.charAt(RANDOM.nextInt(UPPER.length())));
         sb.append(LOWER.charAt(RANDOM.nextInt(LOWER.length())));
         sb.append(DIGITS.charAt(RANDOM.nextInt(DIGITS.length())));
@@ -84,7 +83,6 @@ public class UserService {
             sb.append(ALL_CHARS.charAt(RANDOM.nextInt(ALL_CHARS.length())));
         }
 
-        // 셔플하여 패턴 예측 방지
         char[] chars = sb.toString().toCharArray();
         for (int i = chars.length - 1; i > 0; i--) {
             int j = RANDOM.nextInt(i + 1);
