@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/password-change").authenticated()
                         .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/refresh", "/search",
                                 "/api/**")
                         .permitAll()
