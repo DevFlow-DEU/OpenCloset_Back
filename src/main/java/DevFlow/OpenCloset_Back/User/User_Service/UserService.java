@@ -66,6 +66,17 @@ public class UserService {
         emailService.sendTemporaryPassword(email, tempPassword);
     }
 
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = findByEmail(email);
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
