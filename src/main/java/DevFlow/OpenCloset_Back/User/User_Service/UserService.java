@@ -1,5 +1,11 @@
 package DevFlow.OpenCloset_Back.User.User_Service;
 
+import DevFlow.OpenCloset_Back.Board.Repository.*;
+import DevFlow.OpenCloset_Back.Board.entity.Board;
+import DevFlow.OpenCloset_Back.Chat.ChatMessage.Repository.ChatMessageRepository;
+import DevFlow.OpenCloset_Back.Chat.ChatRoom.Entity.ChatRoom;
+import DevFlow.OpenCloset_Back.Chat.ChatRoom.Repository.ChatRoomRepository;
+import DevFlow.OpenCloset_Back.Login.RefreshToken.RefreshTokenRepository;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.dto.req.UserCreateRequestDto;
 import DevFlow.OpenCloset_Back.User.dto.res.UserResponeDto;
@@ -7,8 +13,10 @@ import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +25,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final BoardRepository boardRepository;
+    private final TopRepository topRepository;
+    private final BottomRepository bottomRepository;
+    private final OuterRepository outerRepository;
+    private final JewelryRepossitory jewelryRepossitory;
+    private final One_pieceRepository onePieceRepository;
+    private final ShoesRepository shoesRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     private static final String UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String LOWER = "abcdefghijklmnopqrstuvwxyz";
@@ -75,6 +93,41 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteUser(String email) {
+        User user = findByEmail(email);
+        Long userId = user.getId();
+
+        // 1. 채팅 메시지 삭제 (ChatRoom 참조하므로 먼저 삭제)
+        List<ChatRoom> chatRooms = chatRoomRepository.findByUser1IdOrUser2Id(userId, userId);
+        if (!chatRooms.isEmpty()) {
+            chatMessageRepository.deleteByChatRoomIn(chatRooms);
+        }
+
+        // 2. 채팅방 삭제
+        chatRoomRepository.deleteByUser1IdOrUser2Id(userId, userId);
+
+        // 3. 카테고리 엔티티 삭제 (Board 참조하므로 Board보다 먼저 삭제)
+        List<Board> userBoards = boardRepository.findByUserId(userId);
+        if (!userBoards.isEmpty()) {
+            topRepository.deleteByBoardIn(userBoards);
+            bottomRepository.deleteByBoardIn(userBoards);
+            outerRepository.deleteByBoardIn(userBoards);
+            jewelryRepossitory.deleteByBoardIn(userBoards);
+            onePieceRepository.deleteByBoardIn(userBoards);
+            shoesRepository.deleteByBoardIn(userBoards);
+        }
+
+        // 4. 게시물 삭제
+        boardRepository.deleteByUserId(userId);
+
+        // 5. RefreshToken 삭제
+        refreshTokenRepository.deleteByUsername(email);
+
+        // 6. 유저 삭제
+        userRepository.delete(user);
     }
 
     public User findByEmail(String email) {
