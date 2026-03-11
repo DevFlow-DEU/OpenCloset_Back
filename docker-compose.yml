@@ -22,9 +22,36 @@ services:
     # DB가 먼저 뜬 다음에 앱이 뜨도록 설정
     depends_on:
       - db
-    ports:
-      - "80:8080"
+    # 외부에 직접 노출하지 않고 Nginx를 통해서만 접근
+    expose:
+      - "8080"
     env_file: .env
     environment:
       # [중요] 컨테이너 환경에서는 localhost가 아닌 서비스 이름(db)으로 접속해야 합니다.
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OpenCloset?createDatabaseIfNotExist=true
+
+  # Nginx 리버스 프록시 (SSL 처리)
+  nginx:
+    image: nginx:alpine
+    container_name: opencloset-nginx
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+
+  # Certbot (SSL 인증서 자동 갱신)
+  certbot:
+    image: certbot/certbot
+    container_name: opencloset-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # 12시간마다 인증서 갱신 시도
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
