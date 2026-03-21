@@ -31,4 +31,7 @@ public class User {
 
     @Column(nullable = false) // 나이
     private String age;
+
+    @Column(nullable = true)
+    private String profileImage; // 프로필 이미지 경로 (URL)
 }
