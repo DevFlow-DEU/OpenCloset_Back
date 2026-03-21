@@ -1,6 +1,7 @@
 package DevFlow.OpenCloset_Back.User.User_Controller;
 
 import DevFlow.OpenCloset_Back.Login.Login_Service.LoginService;
+import DevFlow.OpenCloset_Back.User.User_Service.UserService;
 import DevFlow.OpenCloset_Back.User.dto.req.AddressChangeRequestDto;
 import DevFlow.OpenCloset_Back.User.dto.res.MyPageProfileResponseDto;
 import DevFlow.OpenCloset_Back.User.dto.res.MyProductResponseDto;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/mypage")
@@ -29,6 +32,7 @@ import java.util.Map;
 public class MyPageController {
 
         private final LoginService loginService;
+        private final UserService userService;
 
         @Operation(summary = "마이페이지 프로필 조회", description = "현재 로그인된 사용자의 프로필 정보를 조회합니다. (닉네임, 주소, 이메일) JWT 토큰이 필요합니다.")
         @ApiResponses(value = {
@@ -38,7 +42,30 @@ public class MyPageController {
         @GetMapping("/profile")
         public ResponseEntity<MyPageProfileResponseDto> getMyProfile(
                         @AuthenticationPrincipal UserDetails userDetails) {
-                return ResponseEntity.ok(new MyPageProfileResponseDto("UserName", "부산 진구 가야동", "user@example.com"));
+                String email = userDetails.getUsername();
+                MyPageProfileResponseDto profile = userService.getProfile(email);
+                return ResponseEntity.ok(profile);
+        }
+
+        @Operation(summary = "프로필 이미지 업로드", description = "현재 로그인된 사용자의 프로필 이미지를 업로드합니다. JWT 토큰이 필요합니다.")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "프로필 이미지 업로드 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"프로필 이미지가 성공적으로 업로드되었습니다.\"}"))),
+                        @ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 누락 등)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\": 400, \"error\": \"Bad Request\", \"message\": \"업로드할 파일이 비어 있습니다.\"}"))),
+                        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (토큰 없음 또는 만료)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Unauthorized\"}")))
+        })
+        @PostMapping("/profile/image")
+        public ResponseEntity<Map<String, String>> uploadProfileImage(
+                        @AuthenticationPrincipal UserDetails userDetails,
+                        @RequestParam("profileImage") MultipartFile file) {
+                String email = userDetails.getUsername();
+                try {
+                    userService.uploadProfileImage(email, file);
+                    return ResponseEntity.ok(Map.of("message", "프로필 이미지가 성공적으로 업로드되었습니다."));
+                } catch (IOException e) {
+                    return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 중 오류가 발생했습니다."));
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
+                }
         }
 
         @Operation(summary = "주소 변경", description = "현재 로그인된 사용자의 주소를 변경합니다. JWT 토큰이 필요합니다.")
@@ -51,6 +78,8 @@ public class MyPageController {
         public ResponseEntity<Map<String, String>> changeAddress(
                         @AuthenticationPrincipal UserDetails userDetails,
                         @RequestBody AddressChangeRequestDto requestDto) {
+                String email = userDetails.getUsername();
+                userService.changeAddress(email, requestDto.getNewAddress());
                 return ResponseEntity.ok(Map.of("message", "주소가 성공적으로 변경되었습니다."));
         }
 
