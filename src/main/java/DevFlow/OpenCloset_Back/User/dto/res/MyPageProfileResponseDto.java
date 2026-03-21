@@ -21,4 +21,7 @@ public class MyPageProfileResponseDto {
 
     @Schema(description = "사용자 이메일", example = "user@example.com")
     private String email;
+
+    @Schema(description = "프로필 이미지 경로", example = "/uploads/profiles/default.jpg")
+    private String profileImage;
 }
