@@ -8,6 +8,7 @@ import DevFlow.OpenCloset_Back.Chat.ChatRoom.Repository.ChatRoomRepository;
 import DevFlow.OpenCloset_Back.Login.RefreshToken.RefreshTokenRepository;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.dto.req.UserCreateRequestDto;
+import DevFlow.OpenCloset_Back.User.dto.res.MyPageProfileResponseDto;
 import DevFlow.OpenCloset_Back.User.dto.res.UserResponeDto;
 import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +16,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.io.File;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +79,48 @@ public class UserService {
                 user.getAddress(),
                 user.getNickname(),
                 user.getAge());
+    }
+
+    public MyPageProfileResponseDto getProfile(String email) {
+        User user = findByEmail(email);
+        return new MyPageProfileResponseDto(
+                user.getNickname(),
+                user.getAddress(),
+                user.getEmail(),
+                user.getProfileImage());
+    }
+
+    @Transactional
+    public void uploadProfileImage(String email, MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("업로드할 파일이 비어 있습니다.");
+        }
+
+        String uploadDir = "uploads/profiles/";
+        Path uploadPath = Paths.get(uploadDir);
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
+
+        Path filePath = uploadPath.resolve(uniqueFilename);
+
+        file.transferTo(filePath.toFile());
+
+        User user = findByEmail(email);
+        user.setProfileImage("/" + uploadDir + uniqueFilename);
+        userRepository.save(user);
+    }
+
+    // 주소 변경
+    @Transactional
+    public void changeAddress(String email, String newAddress) {
+        User user = findByEmail(email);
+        user.setAddress(newAddress);
+        userRepository.save(user);
     }
 
     public void resetPassword(String email) {
