@@ -53,10 +53,10 @@ public class MyPageController {
                         @ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 누락 등)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\": 400, \"error\": \"Bad Request\", \"message\": \"업로드할 파일이 비어 있습니다.\"}"))),
                         @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (토큰 없음 또는 만료)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Unauthorized\"}")))
         })
-        @PostMapping("/profile/image")
+        @PostMapping(value = "/profile/image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
         public ResponseEntity<Map<String, String>> uploadProfileImage(
                         @AuthenticationPrincipal UserDetails userDetails,
-                        @RequestParam("profileImage") MultipartFile file) {
+                        @io.swagger.v3.oas.annotations.Parameter(description = "업로드할 사진 파일 (10MB 이하)") @RequestParam("profileImage") MultipartFile file) {
                 String email = userDetails.getUsername();
                 try {
                     userService.uploadProfileImage(email, file);
