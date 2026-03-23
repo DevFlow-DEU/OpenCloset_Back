@@ -97,7 +97,7 @@ public class UserService {
         }
 
         String uploadDir = "uploads/profiles/";
-        Path uploadPath = Paths.get(uploadDir);
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
 
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);

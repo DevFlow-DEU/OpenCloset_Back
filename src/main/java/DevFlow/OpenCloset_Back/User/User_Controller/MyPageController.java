@@ -62,7 +62,8 @@ public class MyPageController {
                     userService.uploadProfileImage(email, file);
                     return ResponseEntity.ok(Map.of("message", "프로필 이미지가 성공적으로 업로드되었습니다."));
                 } catch (IOException e) {
-                    return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 중 오류가 발생했습니다."));
+                    e.printStackTrace();
+                    return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 오류: " + e.getMessage()));
                 } catch (IllegalArgumentException e) {
                     return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
                 }
