@@ -71,6 +71,7 @@ public class UserService {
         user.setPassword(encryptedPassword);
         user.setAddress(requestDto.getAddress());
         user.setAge(requestDto.getAge());
+        user.setProfileImage("/uploads/profiles/default_profile.png"); // 기본 프로필 이미지 설정
 
         userRepository.save(user);
 
@@ -92,8 +93,14 @@ public class UserService {
 
     @Transactional
     public void uploadProfileImage(String email, MultipartFile file) throws IOException {
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("업로드할 파일이 비어 있습니다.");
+        User user = findByEmail(email);
+
+        // 파일이 첨부되지 않았거나 비어있는 경우 기본 이미지 설정
+        if (file == null || file.isEmpty()) {
+            // TODO: 원하시는 "기본 이미지 경로" 혹은 "URL"로 변경해 주세요.
+            user.setProfileImage("/uploads/profiles/default_profile.png");
+            userRepository.save(user);
+            return;
         }
 
         String uploadDir = "uploads/profiles/";
@@ -110,7 +117,6 @@ public class UserService {
 
         file.transferTo(filePath.toFile());
 
-        User user = findByEmail(email);
         user.setProfileImage("/" + uploadDir + uniqueFilename);
         userRepository.save(user);
     }
