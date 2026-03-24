@@ -2,7 +2,7 @@ name: CI/CD Pipeline (Direct Build)
 
 on:
   push:
-    branches: [ "jin_part" ] # main 브랜치에 코드가 올라오면 자동 실행
+    branches: [ "main", "jin_part" ] # main 또는 jin_part 브랜치에 코드가 올라오면 자동 실행
 
 jobs:
   deploy:
@@ -16,28 +16,25 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
+            set -e 
+            
             echo "🚧 배포 시작: 서버에 접속했습니다."
             
-            # 1. 프로젝트 폴더로 이동
             cd /home/ubuntu/OpenCloset_Back
             
-            # 2. 최신 코드 받기 (충돌 방지를 위해 강제 동기화)
+            echo "📥 최신 코드 다운로드 중..."
             git fetch --all
-            git reset --hard origin/main
-            git pull origin main
-            
-            # 3. 실행 권한 부여
+            git reset --hard origin/jin_part
+            git pull origin jin_part
+
             chmod +x gradlew
-            
-            # 4. 자바 빌드 (JAR 파일 생성)
+
             echo "☕ 자바 빌드 시작..."
             ./gradlew clean build -x test
             
-            # 5. 도커 컨테이너 재배포
-            # --build 옵션: 코드가 바뀌었으니 이미지를 새로 만듭니다.
             echo "🐳 도커 컨테이너 재배포..."
             sudo docker compose up -d --build
             
             sudo docker image prune -f
             
-            echo "✅ 배포 완료! "
+            echo "✅ 배포 완벽하게 성공!"

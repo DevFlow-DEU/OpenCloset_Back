@@ -1,5 +1,5 @@
 # 1. Java 17 실행 환경 설정
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-jammy
 
 # 2. 빌드된 jar 파일을 컨테이너 내부로 복사
 # 빌드 결과물 이름이 다를 수 있으니 build/libs/*.jar 로 지정합니다.

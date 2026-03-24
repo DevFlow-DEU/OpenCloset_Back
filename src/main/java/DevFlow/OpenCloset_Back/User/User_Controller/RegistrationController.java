@@ -39,5 +39,4 @@ public class RegistrationController {
         UserResponeDto responseDto = userService.registerUser(requestDto);
         return ResponseEntity.ok(responseDto);
     }
-
 }

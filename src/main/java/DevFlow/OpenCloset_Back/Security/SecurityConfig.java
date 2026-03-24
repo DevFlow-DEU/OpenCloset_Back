@@ -66,8 +66,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/refresh", "/search",
-                                "/api/**")
+                        .requestMatchers("/auth/password-change", "/auth/delete").authenticated()
+                        .requestMatchers("/", "/auth/register", "/auth/login", "/auth/logout", "/auth/refresh", "/search",
+                                "/api/**", "/uploads/**")
                         .permitAll()
                         .requestMatchers("/auth/**", "/auth/kakao/**", "/search", "/error").permitAll()
                         // Swagger UI 허용
