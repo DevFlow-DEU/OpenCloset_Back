@@ -13,9 +13,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+@Tag(name = "Board API", description = "게시물 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/board")
@@ -33,12 +37,12 @@ public class BoardController {
             User loginUser = userService.findByEmail(email);
             return boardService.getPostsByAddress(loginUser.getAddress());
         } else {
-            // 로그인 안 한 경우 전체 게시글 반환 (원하면 아래 주석 해제)
             return boardService.getPosts();
-            // throw new IllegalArgumentException("로그인이 필요합니다.");
         }
     }
 
+    @Operation(summary = "새 게시물 생성", description = "새로운 옷 대여 게시물을 작성. (토큰 인증 필수)")
+    @ApiResponse(responseCode = "200", description = "게시물 생성 성공")
     @PostMapping("/create")
     public BoardCreateResponsetDto createBoard(@RequestBody BoardCreateRequestDto requestDto,
             @AuthenticationPrincipal UserDetails userDetails) {
