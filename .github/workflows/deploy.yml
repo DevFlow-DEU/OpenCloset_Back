@@ -24,8 +24,9 @@ jobs:
             
             echo "📥 최신 코드 다운로드 중..."
             git fetch --all
-            git reset --hard origin/jin_part
-            git pull origin jin_part
+            git checkout ${{ github.ref_name }}
+            git reset --hard origin/${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
 
             chmod +x gradlew
 
