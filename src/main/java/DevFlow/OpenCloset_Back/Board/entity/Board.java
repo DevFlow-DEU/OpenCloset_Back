@@ -16,27 +16,27 @@ import java.time.LocalDateTime;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor
-public class Board implements Serializable { //게시물 id
+public class Board implements Serializable { // 게시물 id
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
-    private String title;   //제목
+    private String title; // 제목
 
     @Column(nullable = false)
-    private String description; //의류에 관한 설명
+    private String description; // 의류에 관한 설명
 
     @Column(nullable = false)
-    private String image;   //의류 사진 (url로 단순 db 삽입 예정)
+    private String image; // 의류 사진
 
     @Column(nullable = false)
-    private String size;    //의류 사이즈
+    private String size; // 의류 사이즈
 
     @Column(nullable = false)
-    private String sex;    //해당 의류 성별
+    private String sex; // 해당 의류 성별
 
     @Column(nullable = false)
-    private String place;   //거래 장소
+    private String place; // 거래 장소
 
     @Column(nullable = false)
     private Long price;
@@ -48,7 +48,7 @@ public class Board implements Serializable { //게시물 id
     private String category;
 
     @CreatedDate
-    private LocalDateTime createdAt;    //엔티티가 생성되어 저장될 때 시간을 자동 저장
+    private LocalDateTime createdAt; // 엔티티가 생성되어 저장될 때 시간을 자동 저장
 
     @LastModifiedDate
     private LocalDateTime modifiedAt;
@@ -57,11 +57,11 @@ public class Board implements Serializable { //게시물 id
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Board(BoardCreateRequestDto req, User user){
+    public Board(BoardCreateRequestDto req, String imagePath, User user) {
         this.title = req.getTitle();
         this.description = req.getDescription();
         this.sex = req.getSex();
-        this.image = req.getImage();
+        this.image = imagePath;
         this.size = req.getSize();
         this.place = req.getPlace();
         this.price = req.getPrice();
