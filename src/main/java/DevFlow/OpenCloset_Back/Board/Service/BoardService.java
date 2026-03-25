@@ -9,7 +9,12 @@ import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -70,8 +75,29 @@ public class BoardService {
         }
 
         @Transactional
-        public BoardCreateResponsetDto createBoard (BoardCreateRequestDto req,User user){
-            Board board = new Board(req,user);
+        public BoardCreateResponsetDto createBoard (BoardCreateRequestDto req, User user) throws IOException {
+            
+            MultipartFile file = req.getImage();
+            String imagePath = "/images/default_board.png"; // 게시물 기본 이미지
+
+            if (file != null && !file.isEmpty()) {
+                String uploadDir = "uploads/boards/";
+                Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                String originalFilename = file.getOriginalFilename();
+                String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
+
+                Path filePath = uploadPath.resolve(uniqueFilename);
+
+                file.transferTo(filePath.toFile());
+                imagePath = "/" + uploadDir + uniqueFilename;
+            }
+
+            Board board = new Board(req, imagePath, user);
             boardRepository.save(board);
 
 
