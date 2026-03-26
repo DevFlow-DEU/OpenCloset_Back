@@ -59,13 +59,13 @@ public class MyPageController {
                         @io.swagger.v3.oas.annotations.Parameter(description = "업로드할 사진 파일 (10MB 이하)") @RequestParam("profileImage") MultipartFile file) {
                 String email = userDetails.getUsername();
                 try {
-                    userService.uploadProfileImage(email, file);
-                    return ResponseEntity.ok(Map.of("message", "프로필 이미지가 성공적으로 업로드되었습니다."));
+                        userService.uploadProfileImage(email, file);
+                        return ResponseEntity.ok(Map.of("message", "프로필 이미지가 성공적으로 업로드되었습니다."));
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 오류: " + e.getMessage()));
+                        e.printStackTrace();
+                        return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 오류: " + e.getMessage()));
                 } catch (IllegalArgumentException e) {
-                    return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
+                        return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
                 }
         }
 
@@ -84,20 +84,18 @@ public class MyPageController {
                 return ResponseEntity.ok(Map.of("message", "주소가 성공적으로 변경되었습니다."));
         }
 
-        @Operation(summary = "내 상품 목록 조회", description = "현재 로그인된 사용자가 등록한 상품 목록을 조회합니다. JWT 토큰이 필요합니다.")
+        @Operation(summary = "내 상품 목록 조회", description = "현재 로그인된 유저가 업로드(등록)한 모든 상품(옷) 목록을 불러옵니다. \n\n 이메일(JWT 토큰)을 기반으로 본인이 올린 게시물만 출력하며, 상태(판매중 등)와 사진 정보가 포함됩니다.")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "상품 목록 조회 성공", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = MyProductResponseDto.class)))),
-                        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (토큰 없음 또는 만료)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Unauthorized\"}")))
+                        @ApiResponse(responseCode = "200", description = "내 상품 목록 조회 완벽히 성공!", content = @Content(mediaType = "application/json", 
+                            array = @ArraySchema(schema = @Schema(implementation = MyProductResponseDto.class)), 
+                            examples = @ExampleObject(value = "[\n  {\n    \"productId\": 25,\n    \"title\": \"나이키 바람막이 L사이즈 빌려드려요!\",\n    \"price\": 15000,\n    \"status\": \"판매중\",\n    \"imageUrl\": \"/uploads/boards/17150123984_nike_windbreaker.jpg\",\n    \"createdAt\": \"2026-03-24T18:30:11.123\"\n  },\n  {\n    \"productId\": 11,\n    \"title\": \"아디다스 츄리닝 바지\",\n    \"price\": 8000,\n    \"status\": \"예약중\",\n    \"imageUrl\": \"/images/default_board.png\",\n    \"createdAt\": \"2026-03-10T12:00:00.000\"\n  }\n]"))),
+                        @ApiResponse(responseCode = "401", description = "로그인하지 않았거나 토큰이 만료됨", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Unauthorized - 유효하지 않은 토큰입니다.\"}")))
         })
         @GetMapping("/products")
-        public ResponseEntity<List<MyProductResponseDto>> getMyProducts(
-                        @AuthenticationPrincipal UserDetails userDetails) {
-                List<MyProductResponseDto> dummyProducts = List.of(
-                                new MyProductResponseDto(1L, "나이키 에어맥스 90", 50000, "판매중",
-                                                "https://example.com/image1.jpg", "2026-03-19T10:00:00"),
-                                new MyProductResponseDto(2L, "아디다스 후드티", 30000, "예약중", "https://example.com/image2.jpg",
-                                                "2026-03-18T14:30:00"));
-                return ResponseEntity.ok(dummyProducts);
+        public ResponseEntity<List<MyProductResponseDto>> getMyProducts(@AuthenticationPrincipal UserDetails userDetails) {
+                String email = userDetails.getUsername();
+                List<MyProductResponseDto> myProducts = userService.getMyProducts(email);
+                return ResponseEntity.ok(myProducts);
         }
 
         @Operation(summary = "로그아웃", description = "현재 로그인된 사용자를 로그아웃합니다. 세션을 무효화합니다.")
