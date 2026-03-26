@@ -47,6 +47,9 @@ public class Board implements Serializable { // 게시물 id
     @Column(nullable = false)
     private String category;
 
+    @Column(nullable = false)
+    private String status; // 거래 상태 (판매중, 예약중, 판매완료)
+
     @CreatedDate
     private LocalDateTime createdAt; // 엔티티가 생성되어 저장될 때 시간을 자동 저장
 
@@ -67,6 +70,7 @@ public class Board implements Serializable { // 게시물 id
         this.price = req.getPrice();
         this.date = req.getDate();
         this.category = req.getCategory();
+        this.status = "판매중"; // 신규 게시물은 무조건 '판매중' 상태
         this.user = user;
     }
 }
