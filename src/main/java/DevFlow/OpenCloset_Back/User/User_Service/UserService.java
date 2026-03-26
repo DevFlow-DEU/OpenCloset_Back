@@ -9,6 +9,7 @@ import DevFlow.OpenCloset_Back.Login.RefreshToken.RefreshTokenRepository;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.dto.req.UserCreateRequestDto;
 import DevFlow.OpenCloset_Back.User.dto.res.MyPageProfileResponseDto;
+import DevFlow.OpenCloset_Back.User.dto.res.MyProductResponseDto;
 import DevFlow.OpenCloset_Back.User.dto.res.UserResponeDto;
 import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +90,20 @@ public class UserService {
                 user.getAddress(),
                 user.getEmail(),
                 user.getProfileImage());
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyProductResponseDto> getMyProducts(String email) {
+        User user = findByEmail(email);
+        List<Board> boards = boardRepository.findByUserId(user.getId());
+
+        return boards.stream().map(board -> new MyProductResponseDto(
+                board.getId(),
+                board.getTitle(),
+                board.getPrice().intValue(),
+                board.getStatus(),
+                board.getImage(),
+                board.getCreatedAt() != null ? board.getCreatedAt().toString() : "")).toList();
     }
 
     @Transactional
