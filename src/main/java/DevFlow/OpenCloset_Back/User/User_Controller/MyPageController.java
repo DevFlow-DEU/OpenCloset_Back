@@ -47,41 +47,28 @@ public class MyPageController {
                 return ResponseEntity.ok(profile);
         }
 
-        @Operation(summary = "프로필 이미지 업로드", description = "현재 로그인된 사용자의 프로필 이미지를 업로드합니다. JWT 토큰이 필요합니다.")
+        @Operation(summary = "프로필 통합 수정", description = "기존에 분리되어 있던 이미지, 닉네임, 주소 변경을 한 번에 처리하는 API입니다. 변경을 원하는 필드 값(FormData 형식)만 채워서 보내면 됩니다. 변경하지 않을 값은 빈 값으로 두거나 안 보내도 됩니다. JWT 토큰이 필수입니다.")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "프로필 이미지 업로드 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"프로필 이미지가 성공적으로 업로드되었습니다.\"}"))),
-                        @ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 누락 등)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\": 400, \"error\": \"Bad Request\", \"message\": \"업로드할 파일이 비어 있습니다.\"}"))),
-                        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (토큰 없음 또는 만료)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Unauthorized\"}")))
+                        @ApiResponse(responseCode = "200", description = "프로필 수정 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"프로필 정보가 성공적으로 수정되었습니다.\"}"))),
+                        @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 닉네임 중복", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"이미 사용 중인 닉네임입니다.\"}"))),
+                        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Unauthorized\"}")))
         })
-        @PostMapping(value = "/profile/image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-        public ResponseEntity<Map<String, String>> uploadProfileImage(
+        @PostMapping(value = "/edit", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+        public ResponseEntity<Map<String, String>> editProfile(
                         @AuthenticationPrincipal UserDetails userDetails,
-                        @io.swagger.v3.oas.annotations.Parameter(description = "업로드할 사진 파일 (10MB 이하)") @RequestParam("profileImage") MultipartFile file) {
+                        @RequestParam(value = "profileImage", required = false) MultipartFile file,
+                        @RequestParam(value = "nickname", required = false) String nickname,
+                        @RequestParam(value = "address", required = false) String address) {
                 String email = userDetails.getUsername();
                 try {
-                        userService.uploadProfileImage(email, file);
-                        return ResponseEntity.ok(Map.of("message", "프로필 이미지가 성공적으로 업로드되었습니다."));
+                        userService.updateProfile(email, file, nickname, address);
+                        return ResponseEntity.ok(Map.of("message", "프로필 정보가 성공적으로 수정되었습니다."));
                 } catch (IOException e) {
                         e.printStackTrace();
                         return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 오류: " + e.getMessage()));
                 } catch (IllegalArgumentException e) {
-                        return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
+                        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
                 }
-        }
-
-        @Operation(summary = "주소 변경", description = "현재 로그인된 사용자의 주소를 변경합니다. JWT 토큰이 필요합니다.")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "주소 변경 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"주소가 성공적으로 변경되었습니다.\"}"))),
-                        @ApiResponse(responseCode = "400", description = "잘못된 요청 (주소 값 누락)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\": 400, \"error\": \"Bad Request\", \"message\": \"변경할 주소를 입력해주세요.\"}"))),
-                        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (토큰 없음 또는 만료)", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Unauthorized\"}")))
-        })
-        @PutMapping("/address")
-        public ResponseEntity<Map<String, String>> changeAddress(
-                        @AuthenticationPrincipal UserDetails userDetails,
-                        @RequestBody AddressChangeRequestDto requestDto) {
-                String email = userDetails.getUsername();
-                userService.changeAddress(email, requestDto.getNewAddress());
-                return ResponseEntity.ok(Map.of("message", "주소가 성공적으로 변경되었습니다."));
         }
 
         @Operation(summary = "내 상품 목록 조회", description = "현재 로그인된 유저가 업로드(등록)한 모든 상품(옷) 목록을 불러옴. \n\n 이메일(JWT 토큰)을 기반으로 본인이 올린 게시물만 출력하며, 상태(판매중 등)와 사진 정보가 포함.")

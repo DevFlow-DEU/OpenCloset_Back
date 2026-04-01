@@ -106,39 +106,39 @@ public class UserService {
     }
 
     @Transactional
-    public void uploadProfileImage(String email, MultipartFile file) throws IOException {
+    public void updateProfile(String email, MultipartFile file, String nickname, String address) throws IOException {
         User user = findByEmail(email);
 
-        // 파일이 첨부되지 않았거나 비어있는 경우 기본 이미지 설정
-        if (file == null || file.isEmpty()) {
-            user.setProfileImage("/images/default_profile.png");
-            userRepository.save(user);
-            return;
+        // 1. 프로필 이미지 업데이트
+        if (file != null && !file.isEmpty()) {
+            String uploadDir = "uploads/profiles/";
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String originalFilename = file.getOriginalFilename();
+            String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
+            Path filePath = uploadPath.resolve(uniqueFilename);
+            
+            file.transferTo(filePath.toFile());
+            user.setProfileImage("/" + uploadDir + uniqueFilename);
         }
 
-        String uploadDir = "uploads/profiles/";
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        // 2. 닉네임 업데이트
+        if (nickname != null && !nickname.trim().isEmpty() && !nickname.equals(user.getNickname())) {
+            if (userRepository.findByNickname(nickname).isPresent()) {
+                throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            }
+            user.setNickname(nickname);
         }
 
-        String originalFilename = file.getOriginalFilename();
-        String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
+        // 3. 주소 업데이트
+        if (address != null && !address.trim().isEmpty() && !address.equals(user.getAddress())) {
+            user.setAddress(address);
+        }
 
-        Path filePath = uploadPath.resolve(uniqueFilename);
-
-        file.transferTo(filePath.toFile());
-
-        user.setProfileImage("/" + uploadDir + uniqueFilename);
-        userRepository.save(user);
-    }
-
-    // 주소 변경
-    @Transactional
-    public void changeAddress(String email, String newAddress) {
-        User user = findByEmail(email);
-        user.setAddress(newAddress);
         userRepository.save(user);
     }
 
