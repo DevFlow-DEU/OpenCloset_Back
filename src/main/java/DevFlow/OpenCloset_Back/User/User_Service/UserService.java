@@ -71,7 +71,6 @@ public class UserService {
         user.setNickname(requestDto.getNickname());
         user.setPassword(encryptedPassword);
         user.setAddress(requestDto.getAddress());
-        user.setAge(requestDto.getAge());
         user.setProfileImage("/images/default_profile.png"); // 기본 프로필 이미지 설정
 
         userRepository.save(user);
@@ -79,8 +78,7 @@ public class UserService {
         return new UserResponeDto(
                 user.getEmail(),
                 user.getAddress(),
-                user.getNickname(),
-                user.getAge());
+                user.getNickname());
     }
 
     public MyPageProfileResponseDto getProfile(String email) {
@@ -166,8 +164,13 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(String email) {
+    public void deleteUser(String email, String password) {
         User user = findByEmail(email);
+        
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
         Long userId = user.getId();
 
         // 1. 채팅 메시지 삭제 (ChatRoom 참조하므로 먼저 삭제)
