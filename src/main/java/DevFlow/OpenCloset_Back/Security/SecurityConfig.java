@@ -68,7 +68,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/password-change", "/auth/delete").authenticated()
                         .requestMatchers("/", "/auth/register", "/auth/login", "/auth/logout", "/auth/refresh", "/search",
-                                "/api/**", "/uploads/**")
+                                "/api/**", "/uploads/**", "/images/**")
                         .permitAll()
                         .requestMatchers("/auth/**", "/auth/kakao/**", "/search", "/error").permitAll()
                         // Swagger UI 허용
