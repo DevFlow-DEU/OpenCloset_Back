@@ -78,7 +78,8 @@ public class UserService {
         return new UserResponeDto(
                 user.getEmail(),
                 user.getAddress(),
-                user.getNickname());
+                user.getNickname(),
+                user.getProfileImage());
     }
 
     public MyPageProfileResponseDto getProfile(String email) {
@@ -166,7 +167,7 @@ public class UserService {
     @Transactional
     public void deleteUser(String email, String password) {
         User user = findByEmail(email);
-        
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
