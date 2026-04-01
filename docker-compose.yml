@@ -28,3 +28,5 @@ services:
     environment:
       # [중요] 컨테이너 환경에서는 localhost가 아닌 서비스 이름(db)으로 접속해야 합니다.
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OpenCloset?createDatabaseIfNotExist=true
+    volumes:
+      - ./uploads:/uploads
