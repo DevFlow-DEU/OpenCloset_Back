@@ -40,7 +40,8 @@ public class LoginService {
                         user.getNickname(),
                         "Login successful",
                         accessToken,
-                        refreshToken);
+                        refreshToken,
+                        user.getProfileImage());
             }
         }
 

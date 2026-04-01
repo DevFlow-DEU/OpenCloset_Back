@@ -117,6 +117,7 @@ public class KakaoService {
                 kakaoUser.getNickname(),
                 "카카오 로그인 성공",
                 accessToken,
-                refreshToken);
+                refreshToken,
+                "https://opencloset.jihongeek.com/images/default_profile.png");
     }
 }
