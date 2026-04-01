@@ -21,7 +21,4 @@ public class UserCreateRequestDto {
 
     @Schema(description = "사용자 주소", example = "부산시 부산진구")
     private String address;
-
-    @Schema(description = "사용자 나이", example = "26")
-    private String age;
 }

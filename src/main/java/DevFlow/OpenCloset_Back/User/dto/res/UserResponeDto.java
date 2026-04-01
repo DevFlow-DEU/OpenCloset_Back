@@ -18,13 +18,10 @@ public class UserResponeDto {
     @Schema(description = "등록된 사용자 주소", example = "부산시 부산진구")
     private String address;
 
-    @Schema(description = "등록된 사용자 나이", example = "26")
-    private String age;
 
-    public UserResponeDto(String email, String address, String nickname, String age) {
+    public UserResponeDto(String email, String address, String nickname) {
         this.email = email;
         this.address = address;
         this.nickname = nickname;
-        this.age = age;
     }
 }
