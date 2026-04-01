@@ -33,4 +33,11 @@ public class User {
 
     @Column(nullable = true)
     private String profileImage; // 프로필 이미지 경로 (URL)
+
+    public String getProfileImage() {
+        if (this.profileImage != null && !this.profileImage.startsWith("http")) {
+            return "https://opencloset.jihongeek.workers.dev" + this.profileImage;
+        }
+        return this.profileImage;
+    }
 }

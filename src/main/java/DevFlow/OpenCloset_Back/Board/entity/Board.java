@@ -73,4 +73,11 @@ public class Board implements Serializable { // 게시물 id
         this.status = "판매중"; // 신규 게시물은 무조건 '판매중' 상태
         this.user = user;
     }
+
+    public String getImage() {
+        if (this.image != null && !this.image.startsWith("http")) {
+            return "https://opencloset.jihongeek.workers.dev" + this.image;
+        }
+        return this.image;
+    }
 }
