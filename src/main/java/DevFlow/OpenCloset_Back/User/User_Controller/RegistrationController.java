@@ -25,7 +25,7 @@ public class RegistrationController {
 
     private final UserService userService;
 
-    @Operation(summary = "회원가입", description = "신규 사용자를 등록. 이메일, 닉네임, 비밀번호, 주소, 나이 정보가 필요.")
+    @Operation(summary = "회원가입", description = "신규 사용자를 등록. 이메일, 닉네임, 비밀번호, 주소 정보가 필요.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "회원가입 성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponeDto.class))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 (필수 필드 누락 또는 유효하지 않은 데이터)", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "필수 필드 누락", value = "{\"status\": 400, \"message\": \"이메일은 필수 입력 항목입니다.\", \"timestamp\": \"2026-02-04T15:40:00\"}"))),
