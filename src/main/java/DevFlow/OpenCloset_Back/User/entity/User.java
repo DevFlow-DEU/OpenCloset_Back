@@ -36,7 +36,7 @@ public class User {
 
     public String getProfileImage() {
         if (this.profileImage != null && !this.profileImage.startsWith("http")) {
-            return "https://opencloset.jihongeek.workers.dev" + this.profileImage;
+            return "https://opencloset.jihongeek.com" + this.profileImage;
         }
         return this.profileImage;
     }

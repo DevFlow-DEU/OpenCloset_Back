@@ -76,7 +76,7 @@ public class Board implements Serializable { // 게시물 id
 
     public String getImage() {
         if (this.image != null && !this.image.startsWith("http")) {
-            return "https://opencloset.jihongeek.workers.dev" + this.image;
+            return "https://opencloset.jihongeek.com" + this.image;
         }
         return this.image;
     }
