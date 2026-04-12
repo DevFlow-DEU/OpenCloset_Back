@@ -4,8 +4,8 @@ import DevFlow.OpenCloset_Back.Login.Dto.res.KakaoTokenResponseDto;
 import DevFlow.OpenCloset_Back.Login.Dto.res.KakaoUserInfoDto;
 import DevFlow.OpenCloset_Back.Login.Dto.res.LoginResponseDto;
 import DevFlow.OpenCloset_Back.Login.Jwt_Util.JwtUtil;
-import DevFlow.OpenCloset_Back.Login.Kakao.entity.KakaoUser;
-import DevFlow.OpenCloset_Back.Login.Kakao.repository.KakaoUserRepository;
+import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
+import DevFlow.OpenCloset_Back.User.entity.User;
 import DevFlow.OpenCloset_Back.Login.RefreshToken.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class KakaoService {
 
-    private final KakaoUserRepository kakaoUserRepository;
+    private final UserRepository userRepository;
     private final RefreshTokenService refreshTokenService;
+    private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder;
 
     @Value("${kakao.client-id}")
     private String clientId;
@@ -77,47 +78,54 @@ public class KakaoService {
     public LoginResponseDto loginOrRegister(KakaoUserInfoDto kakaoUserInfo) {
         String kakaoId = String.valueOf(kakaoUserInfo.getId());
         String email = kakaoUserInfo.getEmail();
-        String nickname = kakaoUserInfo.getNickname();
+        
+        // 카카오 이메일 동의를 안 한 경우 가짜 이메일 생성 (User 테이블은 이메일 필수)
+        if (email == null || email.isEmpty()) {
+            email = "kakao_" + kakaoId + "@kakao.com";
+        }
 
+        String nickname = kakaoUserInfo.getNickname();
         if (nickname == null || nickname.isEmpty()) {
             nickname = "카카오유저_" + kakaoId;
         }
 
-        Optional<KakaoUser> existingUser = kakaoUserRepository.findByKakaoId(kakaoId);
+        Optional<User> existingUser = userRepository.findByEmail(email);
 
-        KakaoUser kakaoUser;
+        User curUser;
         if (existingUser.isPresent()) {
-            kakaoUser = existingUser.get();
-            if (email != null && !email.equals(kakaoUser.getEmail())) {
-                kakaoUser.setEmail(email);
-            }
-            if (nickname != null && !nickname.equals(kakaoUser.getNickname())) {
-                kakaoUser.setNickname(nickname);
-            }
-            kakaoUserRepository.save(kakaoUser);
-            log.info("기존 카카오 사용자 로그인 - kakaoId: {}, email: {}", kakaoId, email);
+            curUser = existingUser.get();
+            log.info("기존 카카오 사용자 로그인 - email: {}", email);
         } else {
-            kakaoUser = KakaoUser.builder()
-                    .kakaoId(kakaoId)
-                    .email(email)
-                    .nickname(nickname)
-                    .build();
-            kakaoUserRepository.save(kakaoUser);
-            log.info("신규 카카오 사용자 자동 등록 - kakaoId: {}", kakaoId);
+            curUser = new User();
+            curUser.setEmail(email);
+            
+            // 닉네임 중복 방지 확인
+            if (userRepository.findByNickname(nickname).isPresent()) {
+                nickname = nickname + "_" + kakaoId.substring(0, 4);
+            }
+            curUser.setNickname(nickname);
+            
+            // 카카오 유저는 비밀번호가 필요 없으므로 랜덤으로 암호화하여 채움 (필수값)
+            curUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            curUser.setAddress("주소 미입력"); // 필수값
+            curUser.setProfileImage("/images/default_profile.png");
+
+            userRepository.save(curUser);
+            log.info("신규 카카오 사용자 통합 등록 - email: {}", email);
         }
 
-        String subject = (email != null) ? email : "kakao_" + kakaoId;
-        String accessToken = JwtUtil.generateToken(subject, "ROLE_KAKAO_USER");
+        // ROLE_USER로 일반 로그인과 완전히 동일한 권한 부여
+        String accessToken = JwtUtil.generateToken(curUser.getEmail(), "ROLE_USER");
         String refreshToken = UUID.randomUUID().toString();
 
-        refreshTokenService.saveRefreshToken(subject, refreshToken);
+        refreshTokenService.saveRefreshToken(curUser.getEmail(), refreshToken);
 
         return new LoginResponseDto(
-                subject,
-                kakaoUser.getNickname(),
+                curUser.getEmail(),
+                curUser.getNickname(),
                 "카카오 로그인 성공",
                 accessToken,
                 refreshToken,
-                "https://opencloset.jihongeek.com/images/default_profile.png");
+                curUser.getProfileImage());
     }
 }
