@@ -26,7 +26,7 @@ public class User {
     @Column(nullable = false)
     private String nickname; // 이름
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String address; // 주소
 
 

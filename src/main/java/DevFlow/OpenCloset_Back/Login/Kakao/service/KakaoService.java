@@ -107,7 +107,7 @@ public class KakaoService {
             
             // 카카오 유저는 비밀번호가 필요 없으므로 랜덤으로 암호화하여 채움 (필수값)
             curUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            curUser.setAddress("주소 미입력"); // 필수값
+            curUser.setAddress(null); // 주소는 필수가 아니므로 null로 저장 허용
             curUser.setProfileImage("/images/default_profile.png");
 
             userRepository.save(curUser);
