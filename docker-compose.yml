@@ -12,7 +12,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - opencloset_db_data:/var/lib/mysql
+      - ./mariadb_data:/var/lib/mysql
 
   # 스프링 부트 애플리케이션 서비스
   app:
@@ -30,6 +30,3 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OpenCloset?createDatabaseIfNotExist=true
     volumes:
       - ./uploads:/uploads
-
-volumes:
-  opencloset_db_data:
