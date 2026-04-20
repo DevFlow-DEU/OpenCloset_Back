@@ -36,3 +36,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Data Folders ###
+mariadb_data/
+uploads/
