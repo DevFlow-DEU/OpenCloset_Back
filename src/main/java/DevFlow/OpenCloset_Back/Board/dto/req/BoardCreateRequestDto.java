@@ -33,6 +33,6 @@ public class BoardCreateRequestDto {
     @Schema(description = "대여 기간 (일 수)", example = "3")
     private Integer date;
 
-    @Schema(description = "옷 카테고리 (tops, bottom, outher, onepiece, jewelry, shoes 중 택 1)", example = "outher")
+    @Schema(description = "옷 카테고리 (top, bottom, outer, one piece, jewelry, shoes, bag 중 택 1)", example = "bag")
     private String category;
 }

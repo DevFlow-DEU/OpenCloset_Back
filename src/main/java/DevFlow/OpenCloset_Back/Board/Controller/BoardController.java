@@ -58,41 +58,49 @@ public class BoardController {
         return boardService.createBoard(requestDto, loginUser);
     }
 
+    @Operation(summary = "특정 게시물 조회")
     @GetMapping("/{id}") // 게시물 지정 조회
     public BoardCreateResponsetDto getPost(@PathVariable Long id) {
         return boardService.getPost(id);
     }
 
+    @Operation(summary = "상의(top) 카테고리 목록 조회")
     @GetMapping("/top")
     public List<TopsResponseDto> getTops() {
         return boardService.getTops();
     }
 
+    @Operation(summary = "하의(bottom) 카테고리 목록 조회")
     @GetMapping("/bottom")
     public List<BottomsReponseDto> getBottoms() {
         return boardService.getBottoms();
     }
 
+    @Operation(summary = "아우터(outer) 카테고리 목록 조회")
     @GetMapping("/outher")
     public List<OutherResponseDto> getOuter() {
         return boardService.getOuters();
     }
 
+    @Operation(summary = "원피스(onepiece) 카테고리 목록 조회")
     @GetMapping("/onepiece")
     public List<One_pieceResponseDto> getOnePieces() {
         return boardService.getOnePieces();
     }
 
+    @Operation(summary = "주얼리(jewelry) 카테고리 목록 조회")
     @GetMapping("/jewelry")
     public List<JewelryResponseDto> getJewelry() {
         return boardService.getJewelry();
     }
 
+    @Operation(summary = "신발(shoes) 카테고리 목록 조회")
     @GetMapping("/shoes")
     public List<ShoesResponseDto> getShoes() {
         return boardService.getShoes();
     }
 
+    @Operation(summary = "가방(bag) 카테고리 목록 조회")
     @GetMapping("/bag")
     public List<BagsResponseDto> getBags() {
         return boardService.getBags();
