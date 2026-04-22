@@ -28,6 +28,7 @@ public class BoardService {
     private final JewelryRepossitory jewelryRepossitory;
     private final One_pieceRepository onePieceRepository;
     private final ShoesRepository shoesRepository;
+    private final BagRepository bagRepository;
 
 
     @Transactional(readOnly = true)
@@ -71,6 +72,12 @@ public class BoardService {
         public List<ShoesResponseDto> getShoes() {
             return shoesRepository.findAll().stream()
                     .map(ShoesResponseDto::new)
+                    .toList();
+        }
+        @Transactional(readOnly = true)
+        public List<BagsResponseDto> getBags() {
+            return bagRepository.findAll().stream()
+                    .map(BagsResponseDto::new)
                     .toList();
         }
 
@@ -124,6 +131,10 @@ public class BoardService {
             if (req.getCategory().equals("shoes")) {
                 Shoes shoes = new Shoes(board);
                 shoesRepository.save(shoes);
+            }
+            if (req.getCategory().equals("bag")) {
+                Bag bag = new Bag(board);
+                bagRepository.save(bag);
             }
 
             return new BoardCreateResponsetDto(board);

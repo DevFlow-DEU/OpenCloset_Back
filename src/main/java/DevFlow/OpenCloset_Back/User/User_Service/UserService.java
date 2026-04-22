@@ -41,6 +41,7 @@ public class UserService {
     private final JewelryRepossitory jewelryRepossitory;
     private final One_pieceRepository onePieceRepository;
     private final ShoesRepository shoesRepository;
+    private final BagRepository bagRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -192,6 +193,7 @@ public class UserService {
             jewelryRepossitory.deleteByBoardIn(userBoards);
             onePieceRepository.deleteByBoardIn(userBoards);
             shoesRepository.deleteByBoardIn(userBoards);
+            bagRepository.deleteByBoardIn(userBoards);
         }
 
         // 4. 게시물 삭제

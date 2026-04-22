@@ -78,8 +78,7 @@ public class KakaoService {
     public LoginResponseDto loginOrRegister(KakaoUserInfoDto kakaoUserInfo) {
         String kakaoId = String.valueOf(kakaoUserInfo.getId());
         String email = kakaoUserInfo.getEmail();
-        
-        // 카카오 이메일 동의를 안 한 경우 가짜 이메일 생성 (User 테이블은 이메일 필수)
+
         if (email == null || email.isEmpty()) {
             email = "kakao_" + kakaoId + "@kakao.com";
         }
@@ -98,16 +97,16 @@ public class KakaoService {
         } else {
             curUser = new User();
             curUser.setEmail(email);
-            
+
             // 닉네임 중복 방지 확인
             if (userRepository.findByNickname(nickname).isPresent()) {
                 nickname = nickname + "_" + kakaoId.substring(0, 4);
             }
             curUser.setNickname(nickname);
-            
+
             // 카카오 유저는 비밀번호가 필요 없으므로 랜덤으로 암호화하여 채움 (필수값)
             curUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            curUser.setAddress(null); // 주소는 필수가 아니므로 null로 저장 허용
+            curUser.setAddress("주소 미입력"); // 필수값
             curUser.setProfileImage("/images/default_profile.png");
 
             userRepository.save(curUser);

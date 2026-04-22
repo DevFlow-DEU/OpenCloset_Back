@@ -92,4 +92,9 @@ public class BoardController {
     public List<ShoesResponseDto> getShoes() {
         return boardService.getShoes();
     }
+
+    @GetMapping("/bag")
+    public List<BagsResponseDto> getBags() {
+        return boardService.getBags();
+    }
 }
