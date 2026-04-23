@@ -43,7 +43,7 @@ public class BoardController {
         }
     }
 
-    @Operation(summary = "새 게시물 생성", description = "새로운 옷 대여 게시물을 작성. (토큰 인증 필수)")
+    @Operation(summary = "새 게시물 생성", description = "새로운 옷 대여 게시물을 작성. 작성자가 seller(판매자)로 자동 등록됨. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "게시물 생성 성공")
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BoardCreateResponsetDto createBoard(@ModelAttribute BoardCreateRequestDto requestDto,
@@ -52,10 +52,10 @@ public class BoardController {
         String email = userDetails.getUsername();
         logger.info("인증된 유저 이메일: {}", email);
 
-        User loginUser = userService.findByEmail(email);
-        logger.info("조회된 유저 ID: {}", loginUser.getId());
+        User seller = userService.findByEmail(email);
+        logger.info("조회된 판매자(seller) ID: {}", seller.getId());
 
-        return boardService.createBoard(requestDto, loginUser);
+        return boardService.createBoard(requestDto, seller);
     }
 
     @Operation(summary = "특정 게시물 조회")

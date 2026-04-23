@@ -12,28 +12,26 @@ import java.util.List;
 public interface BoardRepository extends JpaRepository<Board, Long> {
         List<Board> findAllByOrderByModifiedAtDesc();
 
-        List<Board> findByUser_Address(String address);
+        List<Board> findBySeller_Address(String address);
 
-        List<Board> findByUser_AddressOrderByModifiedAtDesc(String address);
+        List<Board> findBySeller_AddressOrderByModifiedAtDesc(String address);
 
-        List<Board> findByUserId(Long userId);
+        List<Board> findBySellerId(Long sellerId);
 
-        void deleteByUserId(Long userId);
+        void deleteBySellerId(Long sellerId);
 
         @Query("SELECT b FROM Board b " +
                         "WHERE (:title IS NULL OR LOWER(b.title) LIKE LOWER(CONCAT('%', :title, '%'))) " +
                         "AND (:description IS NULL OR LOWER(b.description) LIKE LOWER(CONCAT('%', :description, '%'))) "
                         +
                         "AND (:size IS NULL OR b.size = :size) " +
-                        "AND (:place IS NULL OR LOWER(b.place) LIKE LOWER(CONCAT('%', :place, '%'))) " +
-                        "AND b.user.address = :address " + // 주소 조건 추가
+                        "AND b.seller.address = :address " +
                         "ORDER BY b.createdAt DESC")
         List<Board> searchBoards(
                         @Param("title") String title,
                         @Param("description") String description,
                         @Param("size") String size,
-                        @Param("place") String place,
-                        @Param("address") String address // 주소 파라미터 추가
+                        @Param("address") String address
         );
 
 }

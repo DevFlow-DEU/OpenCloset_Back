@@ -3,6 +3,7 @@ package DevFlow.OpenCloset_Back.Board.dto.res;
 import DevFlow.OpenCloset_Back.Board.entity.One_Piece;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -13,23 +14,29 @@ public class One_pieceResponseDto {
     private String image;
     private String size;
     private String sex;
-    private String place;
-    private int date;
+    private Double latitude;
+    private Double longitude;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private String category;
     private Long price;
+    private String status;
     private LocalDateTime createAt;
 
-    public One_pieceResponseDto(One_Piece one_piece){
-        this.id = one_piece.getBoard().getId();
-        this.title = one_piece.getBoard().getTitle();
-        this.description = one_piece.getBoard().getDescription();
-        this.image = one_piece.getBoard().getImage();
-        this.size = one_piece.getBoard().getSize();
-        this.sex = one_piece.getBoard().getSex();
-        this.place = one_piece.getBoard().getPlace();
-        this.category =one_piece.getBoard().getCategory();
-        this.date = one_piece.getBoard().getDate();
-        this.price = one_piece.getBoard().getPrice();
-        this.createAt = one_piece.getBoard().getCreatedAt();
+    public One_pieceResponseDto(One_Piece onePiece) {
+        this.id = onePiece.getBoard().getId();
+        this.title = onePiece.getBoard().getTitle();
+        this.description = onePiece.getBoard().getDescription();
+        this.image = onePiece.getBoard().getImage();
+        this.size = onePiece.getBoard().getSize();
+        this.sex = onePiece.getBoard().getSex();
+        this.latitude = onePiece.getBoard().getLatitude();
+        this.longitude = onePiece.getBoard().getLongitude();
+        this.category = onePiece.getBoard().getCategory();
+        this.startDate = onePiece.getBoard().getStartDate();
+        this.endDate = onePiece.getBoard().getEndDate();
+        this.price = onePiece.getBoard().getPrice();
+        this.status = onePiece.getBoard().getStatus();
+        this.createAt = onePiece.getBoard().getCreatedAt();
     }
 }

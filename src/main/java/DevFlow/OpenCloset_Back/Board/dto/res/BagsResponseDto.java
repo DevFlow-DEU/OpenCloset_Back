@@ -3,6 +3,7 @@ package DevFlow.OpenCloset_Back.Board.dto.res;
 import DevFlow.OpenCloset_Back.Board.entity.Bag;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -13,10 +14,13 @@ public class BagsResponseDto {
     private String image;
     private String size;
     private String sex;
-    private String place;
-    private int date;
+    private Double latitude;
+    private Double longitude;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private String category;
     private Long price;
+    private String status;
     private LocalDateTime createAt;
 
     public BagsResponseDto(Bag bag) {
@@ -26,10 +30,13 @@ public class BagsResponseDto {
         this.image = bag.getBoard().getImage();
         this.size = bag.getBoard().getSize();
         this.sex = bag.getBoard().getSex();
-        this.place = bag.getBoard().getPlace();
+        this.latitude = bag.getBoard().getLatitude();
+        this.longitude = bag.getBoard().getLongitude();
         this.category = bag.getBoard().getCategory();
-        this.date = bag.getBoard().getDate();
+        this.startDate = bag.getBoard().getStartDate();
+        this.endDate = bag.getBoard().getEndDate();
         this.price = bag.getBoard().getPrice();
+        this.status = bag.getBoard().getStatus();
         this.createAt = bag.getBoard().getCreatedAt();
     }
 }
