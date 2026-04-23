@@ -82,7 +82,7 @@ public class BoardService {
         }
 
         @Transactional
-        public BoardCreateResponsetDto createBoard (BoardCreateRequestDto req, User user) throws IOException {
+        public BoardCreateResponsetDto createBoard (BoardCreateRequestDto req, User seller) throws IOException {
             
             MultipartFile file = req.getImage();
             String imagePath = "/images/default_board.png"; // 게시물 기본 이미지
@@ -104,7 +104,7 @@ public class BoardService {
                 imagePath = "/" + uploadDir + uniqueFilename;
             }
 
-            Board board = new Board(req, imagePath, user);
+            Board board = new Board(req, imagePath, seller);
             boardRepository.save(board);
 
 
@@ -141,7 +141,7 @@ public class BoardService {
         }
     @Transactional(readOnly = true)
     public List<BoardCreateResponsetDto> getPostsByAddress(String address) {
-        return boardRepository.findByUser_AddressOrderByModifiedAtDesc(address)
+        return boardRepository.findBySeller_AddressOrderByModifiedAtDesc(address)
                 .stream()
                 .map(BoardCreateResponsetDto::new)
                 .toList();

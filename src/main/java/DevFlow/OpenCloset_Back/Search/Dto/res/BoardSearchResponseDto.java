@@ -4,25 +4,34 @@ import DevFlow.OpenCloset_Back.Board.entity.Board;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Getter
 @Setter
 public class BoardSearchResponseDto {
     private Long id;
     private String name;
-    private int rentalPeriod;
+    private long rentalPeriod; // 대여 기간 (일 수)
     private int rentalCost;
-    private String location;
+    private Double latitude;
+    private Double longitude;
     private String imageUrl;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private LocalDateTime createdAt;
 
     public BoardSearchResponseDto(Board board) {
         this.id = board.getId();
         this.name = board.getTitle();
-        this.rentalPeriod = board.getDate() != null ? board.getDate().intValue() : 0;
+        this.rentalPeriod = (board.getStartDate() != null && board.getEndDate() != null)
+                ? ChronoUnit.DAYS.between(board.getStartDate(), board.getEndDate()) : 0;
         this.rentalCost = board.getPrice() != null ? board.getPrice().intValue() : 0;
-        this.location = board.getPlace();
+        this.latitude = board.getLatitude();
+        this.longitude = board.getLongitude();
+        this.startDate = board.getStartDate();
+        this.endDate = board.getEndDate();
         this.imageUrl = board.getImage();
         this.createdAt = board.getCreatedAt();
     }

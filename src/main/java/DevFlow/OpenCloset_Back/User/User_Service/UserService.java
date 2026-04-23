@@ -95,7 +95,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<MyProductResponseDto> getMyProducts(String email) {
         User user = findByEmail(email);
-        List<Board> boards = boardRepository.findByUserId(user.getId());
+        List<Board> boards = boardRepository.findBySellerId(user.getId());
 
         return boards.stream().map(board -> new MyProductResponseDto(
                 board.getId(),
@@ -185,7 +185,7 @@ public class UserService {
         chatRoomRepository.deleteByUser1IdOrUser2Id(userId, userId);
 
         // 3. 카테고리 엔티티 삭제 (Board 참조하므로 Board보다 먼저 삭제)
-        List<Board> userBoards = boardRepository.findByUserId(userId);
+        List<Board> userBoards = boardRepository.findBySellerId(userId);
         if (!userBoards.isEmpty()) {
             topRepository.deleteByBoardIn(userBoards);
             bottomRepository.deleteByBoardIn(userBoards);
@@ -197,7 +197,7 @@ public class UserService {
         }
 
         // 4. 게시물 삭제
-        boardRepository.deleteByUserId(userId);
+        boardRepository.deleteBySellerId(userId);
 
         // 5. RefreshToken 삭제
         refreshTokenRepository.deleteByUsername(email);

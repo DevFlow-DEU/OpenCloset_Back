@@ -4,6 +4,7 @@ import DevFlow.OpenCloset_Back.Board.entity.Board;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -15,10 +16,17 @@ public class BoardCreateResponsetDto {
     private String image;
     private String size;
     private String sex;
-    private String place;
-    private int date;
+    private Double latitude;
+    private Double longitude;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private String category;
     private Long price;
+    private String status;
+    private Long sellerId;
+    private String sellerNickname;
+    private Long buyerId;
+    private String buyerNickname;
     private LocalDateTime createAt;
 
     public BoardCreateResponsetDto(Board entity) {
@@ -28,10 +36,17 @@ public class BoardCreateResponsetDto {
         this.image = entity.getImage();
         this.size = entity.getSize();
         this.sex = entity.getSex();
-        this.place = entity.getPlace();
-        this.category =entity.getCategory();
-        this.date = entity.getDate();
+        this.latitude = entity.getLatitude();
+        this.longitude = entity.getLongitude();
+        this.category = entity.getCategory();
+        this.startDate = entity.getStartDate();
+        this.endDate = entity.getEndDate();
         this.price = entity.getPrice();
+        this.status = entity.getStatus();
+        this.sellerId = entity.getSeller().getId();
+        this.sellerNickname = entity.getSeller().getNickname();
+        this.buyerId = entity.getBuyer() != null ? entity.getBuyer().getId() : null;
+        this.buyerNickname = entity.getBuyer() != null ? entity.getBuyer().getNickname() : null;
         this.createAt = entity.getCreatedAt();
     }
 }
