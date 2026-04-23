@@ -176,13 +176,13 @@ public class UserService {
         Long userId = user.getId();
 
         // 1. 채팅 메시지 삭제 (ChatRoom 참조하므로 먼저 삭제)
-        List<ChatRoom> chatRooms = chatRoomRepository.findByUser1IdOrUser2Id(userId, userId);
+        List<ChatRoom> chatRooms = chatRoomRepository.findBySellerIdOrWearerId(userId, userId);
         if (!chatRooms.isEmpty()) {
             chatMessageRepository.deleteByChatRoomIn(chatRooms);
         }
 
         // 2. 채팅방 삭제
-        chatRoomRepository.deleteByUser1IdOrUser2Id(userId, userId);
+        chatRoomRepository.deleteBySellerIdOrWearerId(userId, userId);
 
         // 3. 카테고리 엔티티 삭제 (Board 참조하므로 Board보다 먼저 삭제)
         List<Board> userBoards = boardRepository.findBySellerId(userId);
