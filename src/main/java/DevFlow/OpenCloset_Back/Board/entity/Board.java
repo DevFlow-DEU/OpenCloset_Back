@@ -39,7 +39,6 @@ public class Board implements Serializable {
     @Column(nullable = false)
     private String sex; // 해당 의류 성별
 
-    // 거래 장소 - 위도/경도 좌표값으로 변경
     @Column(nullable = false)
     private Double latitude; // 위도
 
@@ -49,7 +48,6 @@ public class Board implements Serializable {
     @Column(nullable = false)
     private Long price;
 
-    // 대여 기간 - start/end로 분리 (Date 타입)
     @Column(nullable = false)
     private LocalDate startDate; // 대여 시작일
 
