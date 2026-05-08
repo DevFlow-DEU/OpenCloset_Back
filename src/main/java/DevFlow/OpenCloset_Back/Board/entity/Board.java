@@ -13,6 +13,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -30,8 +33,11 @@ public class Board implements Serializable {
     @Column(nullable = false)
     private String description; // 의류에 관한 설명
 
-    @Column(nullable = false)
-    private String image; // 의류 사진
+    // 다중 이미지 지원 - board_images 테이블이 자동 생성됨
+    @ElementCollection
+    @CollectionTable(name = "board_images", joinColumns = @JoinColumn(name = "board_id"))
+    @Column(name = "image_path")
+    private List<String> images = new ArrayList<>(); // 의류 사진 (여러 장)
 
     @Column(nullable = false)
     private String size; // 의류 사이즈
@@ -77,11 +83,11 @@ public class Board implements Serializable {
     @JoinColumn(name = "buyer_id", nullable = true)
     private User buyer;
 
-    public Board(BoardCreateRequestDto req, String imagePath, User seller) {
+    public Board(BoardCreateRequestDto req, List<String> imagePaths, User seller) {
         this.title = req.getTitle();
         this.description = req.getDescription();
         this.sex = req.getSex();
-        this.image = imagePath;
+        this.images = imagePaths != null ? imagePaths : new ArrayList<>();
         this.size = req.getSize();
         this.latitude = req.getLatitude();
         this.longitude = req.getLongitude();
@@ -94,10 +100,13 @@ public class Board implements Serializable {
         this.buyer = null; // 아직 빌리는 사람 없음
     }
 
-    public String getImage() {
-        if (this.image != null && !this.image.startsWith("http")) {
-            return "https://opencloset.jihongeek.com" + this.image;
+    // 이미지 경로에 도메인 URL을 붙여서 전체 URL 리스트로 반환
+    public List<String> getFullImageUrls() {
+        if (this.images == null || this.images.isEmpty()) {
+            return List.of("https://opencloset.jihongeek.com/images/default_board.png");
         }
-        return this.image;
+        return this.images.stream()
+                .map(img -> img.startsWith("http") ? img : "https://opencloset.jihongeek.com" + img)
+                .collect(Collectors.toList());
     }
 }
