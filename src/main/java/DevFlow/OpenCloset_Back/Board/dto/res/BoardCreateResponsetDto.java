@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -13,7 +14,7 @@ public class BoardCreateResponsetDto {
     private Long id;
     private String title;
     private String description;
-    private String image;
+    private List<String> images;
     private String size;
     private String sex;
     private Double latitude;
@@ -33,7 +34,7 @@ public class BoardCreateResponsetDto {
         this.id = entity.getId();
         this.title = entity.getTitle();
         this.description = entity.getDescription();
-        this.image = entity.getImage();
+        this.images = entity.getFullImageUrls();
         this.size = entity.getSize();
         this.sex = entity.getSex();
         this.latitude = entity.getLatitude();

@@ -7,6 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -18,8 +19,8 @@ public class BoardCreateRequestDto {
     @Schema(description = "게시물 상세 설명", example = "1회 실착 완전 새상품급입니다. 비 오는 날 입기 좋아요.")
     private String description;
 
-    @Schema(description = "게시물 이미지 파일 (첨부 안 할 시 기본 이미지 등록됨)", type = "string", format = "binary")
-    private MultipartFile image;
+    @Schema(description = "게시물 이미지 파일 (여러 장 업로드 가능, 첨부 안 할 시 기본 이미지 등록됨)", type = "array")
+    private List<MultipartFile> images;
 
     @Schema(description = "옷 사이즈 (예: S, M, L, XL, Free)", example = "L")
     private String size;
