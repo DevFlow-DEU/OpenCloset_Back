@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,7 +18,7 @@ public class BoardSearchResponseDto {
     private int rentalCost;
     private Double latitude;
     private Double longitude;
-    private String imageUrl;
+    private List<String> imageUrls;
     private LocalDate startDate;
     private LocalDate endDate;
     private LocalDateTime createdAt;
@@ -32,7 +33,7 @@ public class BoardSearchResponseDto {
         this.longitude = board.getLongitude();
         this.startDate = board.getStartDate();
         this.endDate = board.getEndDate();
-        this.imageUrl = board.getImage();
+        this.imageUrls = board.getFullImageUrls();
         this.createdAt = board.getCreatedAt();
     }
 }

@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -84,10 +85,10 @@ public class BoardService {
         @Transactional
         public BoardCreateResponsetDto createBoard (BoardCreateRequestDto req, User seller) throws IOException {
             
-            MultipartFile file = req.getImage();
-            String imagePath = "/images/default_board.png"; // 게시물 기본 이미지
+            List<MultipartFile> files = req.getImages();
+            List<String> imagePaths = new ArrayList<>();
 
-            if (file != null && !file.isEmpty()) {
+            if (files != null && !files.isEmpty()) {
                 String uploadDir = "uploads/boards/";
                 Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
 
@@ -95,16 +96,18 @@ public class BoardService {
                     Files.createDirectories(uploadPath);
                 }
 
-                String originalFilename = file.getOriginalFilename();
-                String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
-
-                Path filePath = uploadPath.resolve(uniqueFilename);
-
-                file.transferTo(filePath.toFile());
-                imagePath = "/" + uploadDir + uniqueFilename;
+                for (MultipartFile file : files) {
+                    if (file != null && !file.isEmpty()) {
+                        String originalFilename = file.getOriginalFilename();
+                        String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
+                        Path filePath = uploadPath.resolve(uniqueFilename);
+                        file.transferTo(filePath.toFile());
+                        imagePaths.add("/" + uploadDir + uniqueFilename);
+                    }
+                }
             }
 
-            Board board = new Board(req, imagePath, seller);
+            Board board = new Board(req, imagePaths, seller);
             boardRepository.save(board);
 
 

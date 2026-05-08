@@ -102,7 +102,7 @@ public class UserService {
                 board.getTitle(),
                 board.getPrice().intValue(),
                 board.getStatus(),
-                board.getImage(),
+                board.getFullImageUrls(),
                 board.getCreatedAt() != null ? board.getCreatedAt().toString() : "")).toList();
     }
 

@@ -5,13 +5,14 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 public class TopsResponseDto {
     private Long id;
     private String title;
     private String description;
-    private String image;
+    private List<String> images;
     private String size;
     private String sex;
     private Double latitude;
@@ -27,7 +28,7 @@ public class TopsResponseDto {
         this.id = top.getBoard().getId();
         this.title = top.getBoard().getTitle();
         this.description = top.getBoard().getDescription();
-        this.image = top.getBoard().getImage();
+        this.images = top.getBoard().getFullImageUrls();
         this.size = top.getBoard().getSize();
         this.sex = top.getBoard().getSex();
         this.latitude = top.getBoard().getLatitude();

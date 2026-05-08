@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,11 +24,11 @@ public class MyProductResponseDto {
     @Schema(description = "상품 가격", example = "50000")
     private int price;
 
-    @Schema(description = "상품 상태 (판매중, 예약중, 판매완료)", example = "판매중")
+    @Schema(description = "상품 상태 (대여가능, 대여중, 반납완료)", example = "대여가능")
     private String status;
 
-    @Schema(description = "상품 이미지 URL", example = "https://example.com/image.jpg")
-    private String imageUrl;
+    @Schema(description = "상품 이미지 URL 목록")
+    private List<String> imageUrls;
 
     @Schema(description = "등록 일시", example = "2026-03-19T10:00:00")
     private String createdAt;
