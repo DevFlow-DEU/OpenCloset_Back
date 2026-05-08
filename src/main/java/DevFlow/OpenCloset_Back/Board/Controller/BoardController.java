@@ -32,7 +32,9 @@ public class BoardController {
     private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
     private final CustomUserDetailsService customUserDetailsService;
 
-    @GetMapping("/All") // 모든 게시물 조회
+    @Operation(summary = "전체 게시물 목록 조회", description = "모든 게시물을 최신순으로 조회합니다. 로그인 상태이면 같은 주소(address) 기반으로 필터링된 게시물을 반환합니다. 비로그인 시 전체 게시물을 반환합니다.")
+    @ApiResponse(responseCode = "200", description = "게시물 목록 조회 성공")
+    @GetMapping("/All")
     public List<BoardCreateResponsetDto> getPosts(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails != null) {
             String email = userDetails.getUsername();
@@ -58,9 +60,12 @@ public class BoardController {
         return boardService.createBoard(requestDto, seller);
     }
 
-    @Operation(summary = "특정 게시물 조회")
-    @GetMapping("/{id}") // 게시물 지정 조회
-    public BoardCreateResponsetDto getPost(@PathVariable Long id) {
+    @Operation(summary = "특정 게시물 상세 조회", description = "게시물 ID로 상세 정보를 조회합니다. seller/buyer 정보, 상태, 좌표, 대여기간, 이미지 목록이 포함됩니다.")
+    @ApiResponse(responseCode = "200", description = "게시물 조회 성공")
+    @GetMapping("/{id}")
+    public BoardCreateResponsetDto getPost(
+            @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1")
+            @PathVariable Long id) {
         return boardService.getPost(id);
     }
 
