@@ -1,7 +1,7 @@
 services:
   # 데이터베이스 서비스
   db:
-    image: mariadb:latest
+    image: mariadb:10.11
     container_name: opencloset-db
     restart: always
     env_file: .env
@@ -27,7 +27,7 @@ services:
     env_file: .env
     environment:
       # [중요] 컨테이너 환경에서는 localhost가 아닌 서비스 이름(db)으로 접속해야 합니다.
-      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OpenCloset?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OpenCloset?createDatabaseIfNotExist=true&sslMode=disable
     volumes:
       - ./uploads:/uploads
 
