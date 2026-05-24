@@ -130,8 +130,9 @@ public class BoardController {
             @RequestParam String status,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        // TODO: 실제 로직 구현 예정
-        return null;
+        String email = userDetails.getUsername();
+        User user = userService.findByEmail(email);
+        return boardService.updateStatus(id, status, user);
     }
 
     @Operation(
@@ -146,7 +147,8 @@ public class BoardController {
             @RequestParam(required = false) String status,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        // TODO: 실제 로직 구현 예정
-        return null;
+        String email = userDetails.getUsername();
+        User user = userService.findByEmail(email);
+        return boardService.getMyBoards(user, status);
     }
 }
