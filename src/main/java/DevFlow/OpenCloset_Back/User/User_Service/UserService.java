@@ -122,7 +122,7 @@ public class UserService {
             String originalFilename = file.getOriginalFilename();
             String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
             Path filePath = uploadPath.resolve(uniqueFilename);
-            
+
             file.transferTo(filePath.toFile());
             user.setProfileImage("/" + uploadDir + uniqueFilename);
         }
@@ -204,6 +204,10 @@ public class UserService {
 
         // 6. 유저 삭제
         userRepository.delete(user);
+    }
+
+    public boolean isNicknameDuplicate(String nickname) {
+        return userRepository.findByNickname(nickname).isPresent();
     }
 
     public User findByEmail(String email) {
