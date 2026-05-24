@@ -31,7 +31,12 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         @Param("title") String title,
                         @Param("description") String description,
                         @Param("size") String size,
-                        @Param("address") String address
-        );
+                        @Param("address") String address);
+
+        // 상태관리: seller의 전체 게시물 조회 (최신순)
+        List<Board> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
+
+        // 상태관리: seller의 게시물을 상태별로 조회 (최신순)
+        List<Board> findBySellerIdAndStatusOrderByCreatedAtDesc(Long sellerId, String status);
 
 }
