@@ -67,6 +67,9 @@ public class BoardCreateResponsetDto {
     @Schema(description = "게시물 생성일")
     private LocalDateTime createAt;
 
+    @Schema(description = "내가 찜한 상품인지 여부 (로그인 안 했으면 기본 false)", example = "false")
+    private boolean isWished;
+
     public BoardCreateResponsetDto(Board entity) {
         this.id = entity.getId();
         this.title = entity.getTitle();
@@ -86,5 +89,6 @@ public class BoardCreateResponsetDto {
         this.buyerId = entity.getBuyer() != null ? entity.getBuyer().getId() : null;
         this.buyerNickname = entity.getBuyer() != null ? entity.getBuyer().getNickname() : null;
         this.createAt = entity.getCreatedAt();
+        this.isWished = false; // TODO: 실제 로직 구현 시 유저별 찜 여부 매핑 필요
     }
 }
