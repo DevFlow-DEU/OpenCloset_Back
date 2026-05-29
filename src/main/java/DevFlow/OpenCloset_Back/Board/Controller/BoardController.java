@@ -64,8 +64,7 @@ public class BoardController {
     @ApiResponse(responseCode = "200", description = "게시물 조회 성공")
     @GetMapping("/{id}")
     public BoardCreateResponsetDto getPost(
-            @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1")
-            @PathVariable Long id) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1") @PathVariable Long id) {
         return boardService.getPost(id);
     }
 
@@ -115,40 +114,55 @@ public class BoardController {
     // 상태관리 API
     // ============================================
 
-    @Operation(
-            summary = "게시물 상태 변경",
-            description = "게시물의 대여 상태를 변경합니다. "
-                    + "본인이 올린 게시물(seller)만 변경 가능합니다. "
-                    + "상태값: 대여가능 / 대여중 / 반납완료 (토큰 인증 필수)"
-    )
+    @Operation(summary = "게시물 상태 변경", description = "게시물의 대여 상태를 변경합니다. "
+            + "본인이 올린 게시물(seller)만 변경 가능합니다. "
+            + "상태값: 대여가능 / 대여중 / 반납완료 (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "상태 변경 성공")
     @PatchMapping("/{id}/status")
     public BoardCreateResponsetDto updateStatus(
-            @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1")
-            @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.Parameter(description = "변경할 상태값 (대여가능 / 대여중 / 반납완료)", example = "대여중")
-            @RequestParam String status,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1") @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.Parameter(description = "변경할 상태값 (대여가능 / 대여중 / 반납완료)", example = "대여중") @RequestParam String status,
+            @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
         return boardService.updateStatus(id, status, user);
     }
 
-    @Operation(
-            summary = "내 상품 상태별 필터링 조회",
-            description = "로그인한 유저(seller)가 등록한 상품을 상태별로 필터링하여 조회합니다. "
-                    + "status 파라미터를 안 보내면 전체 조회. (토큰 인증 필수)"
-    )
+    @Operation(summary = "내 상품 상태별 필터링 조회", description = "로그인한 유저(seller)가 등록한 상품을 상태별로 필터링하여 조회합니다. "
+            + "status 파라미터를 안 보내면 전체 조회. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/my")
     public List<BoardCreateResponsetDto> getMyBoardsByStatus(
-            @io.swagger.v3.oas.annotations.Parameter(description = "필터링할 상태값 (대여가능 / 대여중 / 반납완료). 비워두면 전체 조회", example = "대여중")
-            @RequestParam(required = false) String status,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "필터링할 상태값 (대여가능 / 대여중 / 반납완료). 비워두면 전체 조회", example = "대여중") @RequestParam(required = false) String status,
+            @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
         return boardService.getMyBoards(user, status);
+    }
+
+    // ============================================
+    // Owner / Renter 필터 API
+    // ============================================
+
+    @Operation(summary = "Owner(빌려준) 상품 목록 조회 (명세 초안 - 로직 미구현 ❌)", description = "[명세 초안] 로그인한 유저가 '빌려준' 상품(seller인 게시물) 목록을 조회합니다. "
+            + "status 파라미터로 상태 필터링 가능. (토큰 인증 필수)")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @GetMapping("/my/owner")
+    public List<BoardCreateResponsetDto> getOwnerBoards(
+            @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 대여중 / 반납완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        // TODO: Owner 필터 로직 구현 예정
+        return List.of();
+    }
+
+    @Operation(summary = "Renter(빌린) 상품 목록 조회 (명세 초안 - 로직 미구현 ❌)", description = "[명세 초안] 로그인한 유저가 '빌린' 상품(buyer인 게시물) 목록을 조회합니다. "
+            + "status 파라미터로 상태 필터링 가능. (토큰 인증 필수)")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @GetMapping("/my/renter")
+    public List<BoardCreateResponsetDto> getRenterBoards(
+            @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 대여중 / 반납완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        // TODO: Renter 필터 로직 구현 예정
+        return List.of();
     }
 }
