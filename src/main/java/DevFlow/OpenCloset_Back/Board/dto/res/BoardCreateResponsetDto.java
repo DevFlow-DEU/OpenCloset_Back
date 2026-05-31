@@ -70,6 +70,10 @@ public class BoardCreateResponsetDto {
     @Schema(description = "내가 찜한 상품인지 여부 (로그인 안 했으면 기본 false)", example = "false")
     private boolean isWished;
 
+    public void setIsWished(boolean isWished) {
+        this.isWished = isWished;
+    }
+
     public BoardCreateResponsetDto(Board entity) {
         this.id = entity.getId();
         this.title = entity.getTitle();

@@ -6,6 +6,7 @@ import DevFlow.OpenCloset_Back.Chat.ChatMessage.Repository.ChatMessageRepository
 import DevFlow.OpenCloset_Back.Chat.ChatRoom.Entity.ChatRoom;
 import DevFlow.OpenCloset_Back.Chat.ChatRoom.Repository.ChatRoomRepository;
 import DevFlow.OpenCloset_Back.Login.RefreshToken.RefreshTokenRepository;
+import DevFlow.OpenCloset_Back.Wishlist.Repository.WishlistRepository;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.dto.req.UserCreateRequestDto;
 import DevFlow.OpenCloset_Back.User.dto.res.MyPageProfileResponseDto;
@@ -45,6 +46,7 @@ public class UserService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final WishlistRepository wishlistRepository;
 
     private static final String UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String LOWER = "abcdefghijklmnopqrstuvwxyz";
@@ -174,6 +176,9 @@ public class UserService {
         }
 
         Long userId = user.getId();
+
+        // 0. 찜 데이터 삭제
+        wishlistRepository.deleteByUserId(userId);
 
         // 1. 채팅 메시지 삭제 (ChatRoom 참조하므로 먼저 삭제)
         List<ChatRoom> chatRooms = chatRoomRepository.findBySellerIdOrWearerId(userId, userId);
