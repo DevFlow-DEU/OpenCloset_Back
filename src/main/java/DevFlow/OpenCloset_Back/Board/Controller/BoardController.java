@@ -7,6 +7,7 @@ import DevFlow.OpenCloset_Back.Security.CustomUserDetailsService;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.User_Service.UserService;
 import DevFlow.OpenCloset_Back.User.entity.User;
+import DevFlow.OpenCloset_Back.Wishlist.Service.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Board API", description = "게시물 관련 API")
 @RestController
@@ -29,20 +31,35 @@ public class BoardController {
     private final BoardService boardService;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final WishlistService wishlistService;
     private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
     private final CustomUserDetailsService customUserDetailsService;
 
-    @Operation(summary = "전체 게시물 목록 조회", description = "모든 게시물을 최신순으로 조회합니다. 로그인 상태이면 같은 주소(address) 기반으로 필터링된 게시물을 반환합니다. 비로그인 시 전체 게시물을 반환합니다.")
+    /**
+     * DTO 리스트에 로그인 유저의 찜 여부를 일괄 매핑하는 헬퍼 메서드
+     */
+    private void applyWishedStatus(List<BoardCreateResponsetDto> dtos, UserDetails userDetails) {
+        if (userDetails == null || dtos.isEmpty())
+            return;
+        User user = userService.findByEmail(userDetails.getUsername());
+        Set<Long> wishedIds = wishlistService.getWishedBoardIds(user.getId());
+        dtos.forEach(dto -> dto.setIsWished(wishedIds.contains(dto.getId())));
+    }
+
+    @Operation(summary = "전체 게시물 목록 조회", description = "모든 게시물을 최신순으로 조회합니다. 로그인 상태이면 같은 주소(address) 기반으로 필터링된 게시물을 반환하며, 찜 여부(isWished)가 매핑됩니다. 비로그인 시 전체 게시물을 반환합니다.")
     @ApiResponse(responseCode = "200", description = "게시물 목록 조회 성공")
     @GetMapping("/All")
     public List<BoardCreateResponsetDto> getPosts(@AuthenticationPrincipal UserDetails userDetails) {
+        List<BoardCreateResponsetDto> posts;
         if (userDetails != null) {
             String email = userDetails.getUsername();
             User loginUser = userService.findByEmail(email);
-            return boardService.getPostsByAddress(loginUser.getAddress());
+            posts = boardService.getPostsByAddress(loginUser.getAddress());
         } else {
-            return boardService.getPosts();
+            posts = boardService.getPosts();
         }
+        applyWishedStatus(posts, userDetails);
+        return posts;
     }
 
     @Operation(summary = "새 게시물 생성", description = "새로운 옷 대여 게시물을 작성. 작성자가 seller(판매자)로 자동 등록됨. (토큰 인증 필수)")
@@ -60,12 +77,18 @@ public class BoardController {
         return boardService.createBoard(requestDto, seller);
     }
 
-    @Operation(summary = "특정 게시물 상세 조회", description = "게시물 ID로 상세 정보를 조회합니다. seller/buyer 정보, 상태, 좌표, 대여기간, 이미지 목록이 포함됩니다.")
+    @Operation(summary = "특정 게시물 상세 조회", description = "게시물 ID로 상세 정보를 조회합니다. seller/buyer 정보, 상태, 좌표, 대여기간, 이미지 목록, 찜 여부가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "게시물 조회 성공")
     @GetMapping("/{id}")
     public BoardCreateResponsetDto getPost(
-            @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1") @PathVariable Long id) {
-        return boardService.getPost(id);
+            @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1") @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        BoardCreateResponsetDto dto = boardService.getPost(id);
+        if (userDetails != null) {
+            User user = userService.findByEmail(userDetails.getUsername());
+            dto.setIsWished(wishlistService.isWished(user.getId(), id));
+        }
+        return dto;
     }
 
     @Operation(summary = "상의(top) 카테고리 목록 조회")
@@ -129,7 +152,7 @@ public class BoardController {
     }
 
     @Operation(summary = "내 상품 상태별 필터링 조회", description = "로그인한 유저(seller)가 등록한 상품을 상태별로 필터링하여 조회합니다. "
-            + "status 파라미터를 안 보내면 전체 조회. (토큰 인증 필수)")
+            + "status 파라미터를 안 보내면 전체 조회. 찜 여부(isWished)가 매핑됩니다. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/my")
     public List<BoardCreateResponsetDto> getMyBoardsByStatus(
@@ -137,7 +160,9 @@ public class BoardController {
             @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
-        return boardService.getMyBoards(user, status);
+        List<BoardCreateResponsetDto> boards = boardService.getMyBoards(user, status);
+        applyWishedStatus(boards, userDetails);
+        return boards;
     }
 
     // ============================================
