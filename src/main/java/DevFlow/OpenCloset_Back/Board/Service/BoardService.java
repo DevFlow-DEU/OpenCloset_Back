@@ -208,4 +208,48 @@ public class BoardService {
                 .toList();
     }
 
+    // ============================================
+    // Owner / Renter 필터 로직
+    // ============================================
+
+    /**
+     * Owner(빌려준) 상품 조회
+     * 로그인 유저가 seller이면서 buyer가 존재하는 게시물 (실제로 빌려준 이력)
+     * status가 null이면 전체 조회
+     */
+    @Transactional(readOnly = true)
+    public List<BoardCreateResponsetDto> getOwnerBoards(User user, String status) {
+        List<Board> boards;
+
+        if (status != null && !status.trim().isEmpty()) {
+            boards = boardRepository.findBySellerIdAndBuyerIsNotNullAndStatusOrderByCreatedAtDesc(user.getId(), status);
+        } else {
+            boards = boardRepository.findBySellerIdAndBuyerIsNotNullOrderByCreatedAtDesc(user.getId());
+        }
+
+        return boards.stream()
+                .map(BoardCreateResponsetDto::new)
+                .toList();
+    }
+
+    /**
+     * Renter(빌린) 상품 조회
+     * 로그인 유저가 buyer인 게시물
+     * status가 null이면 전체 조회
+     */
+    @Transactional(readOnly = true)
+    public List<BoardCreateResponsetDto> getRenterBoards(User user, String status) {
+        List<Board> boards;
+
+        if (status != null && !status.trim().isEmpty()) {
+            boards = boardRepository.findByBuyerIdAndStatusOrderByCreatedAtDesc(user.getId(), status);
+        } else {
+            boards = boardRepository.findByBuyerIdOrderByCreatedAtDesc(user.getId());
+        }
+
+        return boards.stream()
+                .map(BoardCreateResponsetDto::new)
+                .toList();
+    }
+
 }
