@@ -39,4 +39,16 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
         // 상태관리: seller의 게시물을 상태별로 조회 (최신순)
         List<Board> findBySellerIdAndStatusOrderByCreatedAtDesc(Long sellerId, String status);
 
+        // Owner 필터: seller이면서 buyer가 존재하는 게시물 (빌려준 이력이 있는 것)
+        List<Board> findBySellerIdAndBuyerIsNotNullOrderByCreatedAtDesc(Long sellerId);
+
+        // Owner 필터: seller이면서 buyer가 존재 + 상태별 필터
+        List<Board> findBySellerIdAndBuyerIsNotNullAndStatusOrderByCreatedAtDesc(Long sellerId, String status);
+
+        // Renter 필터: buyer인 게시물 전체 조회 (빌린 것)
+        List<Board> findByBuyerIdOrderByCreatedAtDesc(Long buyerId);
+
+        // Renter 필터: buyer인 게시물 상태별 조회
+        List<Board> findByBuyerIdAndStatusOrderByCreatedAtDesc(Long buyerId, String status);
+
 }
