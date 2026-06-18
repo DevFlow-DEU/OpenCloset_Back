@@ -169,25 +169,31 @@ public class BoardController {
     // Owner / Renter 필터 API
     // ============================================
 
-    @Operation(summary = "Owner(빌려준) 상품 목록 조회 (명세 초안 - 로직 미구현 ❌)", description = "[명세 초안] 로그인한 유저가 '빌려준' 상품(seller인 게시물) 목록을 조회합니다. "
-            + "status 파라미터로 상태 필터링 가능. (토큰 인증 필수)")
+    @Operation(summary = "Owner(빌려준) 상품 목록 조회 (로직 구현됨 ✅)", description = "로그인한 유저가 '빌려준' 상품(seller이면서 buyer가 존재하는 게시물) 목록을 조회합니다. "
+            + "status 파라미터로 상태 필터링 가능. 찜 여부(isWished)가 매핑됩니다. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/my/owner")
     public List<BoardCreateResponsetDto> getOwnerBoards(
             @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 대여중 / 반납완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Owner 필터 로직 구현 예정
-        return List.of();
+        String email = userDetails.getUsername();
+        User user = userService.findByEmail(email);
+        List<BoardCreateResponsetDto> boards = boardService.getOwnerBoards(user, status);
+        applyWishedStatus(boards, userDetails);
+        return boards;
     }
 
-    @Operation(summary = "Renter(빌린) 상품 목록 조회 (명세 초안 - 로직 미구현 ❌)", description = "[명세 초안] 로그인한 유저가 '빌린' 상품(buyer인 게시물) 목록을 조회합니다. "
-            + "status 파라미터로 상태 필터링 가능. (토큰 인증 필수)")
+    @Operation(summary = "Renter(빌린) 상품 목록 조회 (로직 구현됨 ✅)", description = "로그인한 유저가 '빌린' 상품(buyer인 게시물) 목록을 조회합니다. "
+            + "status 파라미터로 상태 필터링 가능. 찜 여부(isWished)가 매핑됩니다. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/my/renter")
     public List<BoardCreateResponsetDto> getRenterBoards(
             @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 대여중 / 반납완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Renter 필터 로직 구현 예정
-        return List.of();
+        String email = userDetails.getUsername();
+        User user = userService.findByEmail(email);
+        List<BoardCreateResponsetDto> boards = boardService.getRenterBoards(user, status);
+        applyWishedStatus(boards, userDetails);
+        return boards;
     }
 }
