@@ -137,18 +137,21 @@ public class BoardController {
     // 상태관리 API
     // ============================================
 
-    @Operation(summary = "게시물 상태 변경", description = "게시물의 대여 상태를 변경합니다. "
+    @Operation(summary = "게시물 상태 변경 + Buyer 지정", description = "게시물의 대여 상태를 변경합니다. "
             + "본인이 올린 게시물(seller)만 변경 가능합니다. "
+            + "'대여중'으로 변경 시 buyerId(빌리는 사람)를 함께 보내야 합니다. "
+            + "'대여가능'으로 되돌리면 buyer가 해제됩니다. "
             + "상태값: 대여가능 / 대여중 / 반납완료 (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "상태 변경 성공")
     @PatchMapping("/{id}/status")
     public BoardCreateResponsetDto updateStatus(
             @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1") @PathVariable Long id,
             @io.swagger.v3.oas.annotations.Parameter(description = "변경할 상태값 (대여가능 / 대여중 / 반납완료)", example = "대여중") @RequestParam String status,
+            @io.swagger.v3.oas.annotations.Parameter(description = "빌리는 사람(buyer)의 유저 ID. '대여중'일 때 필수", example = "7") @RequestParam(required = false) Long buyerId,
             @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
-        return boardService.updateStatus(id, status, user);
+        return boardService.updateStatus(id, status, user, buyerId);
     }
 
     @Operation(summary = "내 상품 상태별 필터링 조회", description = "로그인한 유저(seller)가 등록한 상품을 상태별로 필터링하여 조회합니다. "

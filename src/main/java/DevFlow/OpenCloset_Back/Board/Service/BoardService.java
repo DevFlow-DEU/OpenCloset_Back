@@ -6,6 +6,7 @@ import DevFlow.OpenCloset_Back.Board.dto.res.*;
 import DevFlow.OpenCloset_Back.Board.entity.*;
 import DevFlow.OpenCloset_Back.Board.Repository.BoardRepository;
 import DevFlow.OpenCloset_Back.Board.entity.Board;
+import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class BoardService {
     private final One_pieceRepository onePieceRepository;
     private final ShoesRepository shoesRepository;
     private final BagRepository bagRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<BoardCreateResponsetDto> getPosts() {
@@ -165,11 +167,12 @@ public class BoardService {
     // ============================================
 
     /**
-     * 게시물 상태 변경 (대여가능 / 대여중 / 반납완료)
+     * 게시물 상태 변경 (한 방향만 가능)
+     * 대여가능 → 대여중 (buyerId 필수) → 반납완료
      * 본인(seller)만 변경 가능
      */
     @Transactional
-    public BoardCreateResponsetDto updateStatus(Long boardId, String status, User user) {
+    public BoardCreateResponsetDto updateStatus(Long boardId, String status, User user, Long buyerId) {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시물을 찾을 수 없습니다. id=" + boardId));
 
@@ -178,9 +181,28 @@ public class BoardService {
             throw new IllegalArgumentException("본인의 게시물만 상태를 변경할 수 있습니다.");
         }
 
-        // 유효한 상태값인지 확인
-        if (!status.equals("대여가능") && !status.equals("대여중") && !status.equals("반납완료")) {
-            throw new IllegalArgumentException("유효하지 않은 상태값입니다. (대여가능 / 대여중 / 반납완료)");
+        String currentStatus = board.getStatus();
+
+        // 상태 전환 검증: 대여가능 → 대여중 → 반납완료 (한 방향만 가능)
+        if (currentStatus.equals("대여가능") && status.equals("대여중")) {
+            // 대여가능 → 대여중: buyerId 필수
+            if (buyerId == null) {
+                throw new IllegalArgumentException("'대여중' 상태로 변경하려면 buyerId를 입력해야 합니다.");
+            }
+            User buyer = userRepository.findById(buyerId)
+                    .orElseThrow(() -> new IllegalArgumentException("구매자(buyer)를 찾을 수 없습니다. id=" + buyerId));
+            if (buyer.getId().equals(user.getId())) {
+                throw new IllegalArgumentException("본인의 상품을 본인이 대여할 수 없습니다.");
+            }
+            board.setBuyer(buyer);
+
+        } else if (currentStatus.equals("대여중") && status.equals("반납완료")) {
+            // 대여중 → 반납완료: buyer 유지 (이력 보존)
+
+        } else {
+            throw new IllegalArgumentException(
+                    "상태 전환이 불가능합니다. (대여가능→대여중→반납완료 순서만 가능) "
+                    + "현재: " + currentStatus + " → 요청: " + status);
         }
 
         board.setStatus(status);
