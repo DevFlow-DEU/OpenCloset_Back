@@ -44,9 +44,10 @@ public class SearchController {
     }
 
     @Operation(
-            summary = "게시물 고급 검색 (명세 초안 - 로직 미구현 ❌)",
-            description = "[명세 초안] 키워드 + 필터(성별, 가격범위, 사이즈, 카테고리) + 정렬(최신순/비싼순/싼순) 기능이 추가된 검색 API입니다. "
-                    + "응답에 총 검색 결과 갯수(totalCount)가 포함됩니다. (토큰 인증 필수)"
+            summary = "게시물 고급 검색 (로직 구현됨 ✅)",
+            description = "키워드 + 필터(성별, 가격범위, 사이즈, 카테고리) + 정렬(최신순/비싼순/싼순) 기능이 추가된 검색 API입니다. "
+                    + "응답에 총 검색 결과 갯수(totalCount)가 포함됩니다. "
+                    + "찜 여부(isWished)가 매핑됩니다. (토큰 인증 필수)"
     )
     @ApiResponse(responseCode = "200", description = "검색 성공")
     @PostMapping("/advanced")
@@ -56,7 +57,9 @@ public class SearchController {
             @RequestParam(required = false, defaultValue = "latest") String sort,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        // TODO: 고급 검색 로직 구현 예정
-        return ResponseEntity.ok(new SearchResultResponseDto(List.of(), 0));
+        User loginUser = userService.findByEmail(userDetails.getUsername());
+        String address = loginUser.getAddress();
+        SearchResultResponseDto result = searchService.advancedSearch(request, sort, address, loginUser.getId());
+        return ResponseEntity.ok(result);
     }
 }
