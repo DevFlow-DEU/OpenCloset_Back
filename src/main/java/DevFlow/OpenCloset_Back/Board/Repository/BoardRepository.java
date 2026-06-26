@@ -1,6 +1,7 @@
 package DevFlow.OpenCloset_Back.Board.Repository;
 
 import DevFlow.OpenCloset_Back.Board.entity.Board;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,13 +26,21 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         "AND (:description IS NULL OR LOWER(b.description) LIKE LOWER(CONCAT('%', :description, '%'))) "
                         +
                         "AND (:size IS NULL OR b.size = :size) " +
-                        "AND b.seller.address = :address " +
-                        "ORDER BY b.createdAt DESC")
+                        "AND (:sex IS NULL OR b.sex = :sex) " +
+                        "AND (:category IS NULL OR b.category = :category) " +
+                        "AND (:minPrice IS NULL OR b.price >= :minPrice) " +
+                        "AND (:maxPrice IS NULL OR b.price <= :maxPrice) " +
+                        "AND b.seller.address = :address")
         List<Board> searchBoards(
                         @Param("title") String title,
                         @Param("description") String description,
                         @Param("size") String size,
-                        @Param("address") String address);
+                        @Param("sex") String sex,
+                        @Param("category") String category,
+                        @Param("minPrice") Long minPrice,
+                        @Param("maxPrice") Long maxPrice,
+                        @Param("address") String address,
+                        Sort sort);
 
         // 상태관리: seller의 전체 게시물 조회 (최신순)
         List<Board> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
