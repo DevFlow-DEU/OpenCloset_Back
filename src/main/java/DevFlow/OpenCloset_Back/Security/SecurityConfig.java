@@ -67,7 +67,8 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/password-change", "/auth/delete").authenticated()
-                        .requestMatchers("/", "/auth/register", "/auth/login", "/auth/logout", "/auth/refresh", "/search",
+                        .requestMatchers("/", "/auth/register", "/auth/login", "/auth/logout", "/auth/refresh",
+                                "/search",
                                 "/api/**", "/uploads/**", "/images/**")
                         .permitAll()
                         .requestMatchers("/auth/**", "/auth/kakao/**", "/search", "/error").permitAll()
