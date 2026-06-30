@@ -139,15 +139,14 @@ public class BoardController {
 
     @Operation(summary = "게시물 상태 변경 + Buyer 지정", description = "게시물의 대여 상태를 변경합니다. "
             + "본인이 올린 게시물(seller)만 변경 가능합니다. "
-            + "'대여중'으로 변경 시 buyerId(빌리는 사람)를 함께 보내야 합니다. "
-            + "'대여가능'으로 되돌리면 buyer가 해제됩니다. "
-            + "상태값: 대여가능 / 대여중 / 반납완료 (토큰 인증 필수)")
+            + "'예약중'으로 변경 시 buyerId(빌리는 사람)를 함께 보내야 합니다. "
+            + "상태 흐름: 대여가능 → 예약중(buyerId 필수) → 대여중 → 대여완료 (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "상태 변경 성공")
     @PatchMapping("/{id}/status")
     public BoardCreateResponsetDto updateStatus(
             @io.swagger.v3.oas.annotations.Parameter(description = "게시물 ID", example = "1") @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.Parameter(description = "변경할 상태값 (대여가능 / 대여중 / 반납완료)", example = "대여중") @RequestParam String status,
-            @io.swagger.v3.oas.annotations.Parameter(description = "빌리는 사람(buyer)의 유저 ID. '대여중'일 때 필수", example = "7") @RequestParam(required = false) Long buyerId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "변경할 상태값 (대여가능 / 예약중 / 대여중 / 대여완료)", example = "예약중") @RequestParam String status,
+            @io.swagger.v3.oas.annotations.Parameter(description = "빌리는 사람(buyer)의 유저 ID. '예약중'일 때 필수", example = "7") @RequestParam(required = false) Long buyerId,
             @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
@@ -155,17 +154,17 @@ public class BoardController {
     }
 
     @Operation(summary = "내 상품 상태별 필터링 조회", description = "로그인한 유저(seller)가 등록한 상품을 상태별로 필터링하여 조회합니다. "
-            + "status 파라미터를 안 보내면 전체 조회. 찜 여부(isWished)가 매핑됩니다. (토큰 인증 필수)")
+            + "status 파라미터를 안 보내면 전체 조회. 응답에 총 상품 수(totalCount)가 포함됩니다. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/my")
-    public List<BoardCreateResponsetDto> getMyBoardsByStatus(
-            @io.swagger.v3.oas.annotations.Parameter(description = "필터링할 상태값 (대여가능 / 대여중 / 반납완료). 비워두면 전체 조회", example = "대여중") @RequestParam(required = false) String status,
+    public BoardListResponseDto getMyBoardsByStatus(
+            @io.swagger.v3.oas.annotations.Parameter(description = "필터링할 상태값 (대여가능 / 예약중 / 대여중 / 대여완료). 비워두면 전체 조회", example = "대여중") @RequestParam(required = false) String status,
             @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
         List<BoardCreateResponsetDto> boards = boardService.getMyBoards(user, status);
         applyWishedStatus(boards, userDetails);
-        return boards;
+        return new BoardListResponseDto(boards, boards.size());
     }
 
     // ============================================
@@ -173,30 +172,30 @@ public class BoardController {
     // ============================================
 
     @Operation(summary = "Owner(빌려준) 상품 목록 조회 (로직 구현됨 ✅)", description = "로그인한 유저가 '빌려준' 상품(seller이면서 buyer가 존재하는 게시물) 목록을 조회합니다. "
-            + "status 파라미터로 상태 필터링 가능. 찜 여부(isWished)가 매핑됩니다. (토큰 인증 필수)")
+            + "status 파라미터로 상태 필터링 가능. 응답에 총 상품 수(totalCount)가 포함됩니다. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/my/owner")
-    public List<BoardCreateResponsetDto> getOwnerBoards(
-            @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 대여중 / 반납완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
+    public BoardListResponseDto getOwnerBoards(
+            @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 예약중 / 대여중 / 대여완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
             @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
         List<BoardCreateResponsetDto> boards = boardService.getOwnerBoards(user, status);
         applyWishedStatus(boards, userDetails);
-        return boards;
+        return new BoardListResponseDto(boards, boards.size());
     }
 
     @Operation(summary = "Renter(빌린) 상품 목록 조회 (로직 구현됨 ✅)", description = "로그인한 유저가 '빌린' 상품(buyer인 게시물) 목록을 조회합니다. "
-            + "status 파라미터로 상태 필터링 가능. 찜 여부(isWished)가 매핑됩니다. (토큰 인증 필수)")
+            + "status 파라미터로 상태 필터링 가능. 응답에 총 상품 수(totalCount)가 포함됩니다. (토큰 인증 필수)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/my/renter")
-    public List<BoardCreateResponsetDto> getRenterBoards(
-            @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 대여중 / 반납완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
+    public BoardListResponseDto getRenterBoards(
+            @io.swagger.v3.oas.annotations.Parameter(description = "상태 필터 (대여가능 / 예약중 / 대여중 / 대여완료). 비워두면 전체", example = "대여중") @RequestParam(required = false) String status,
             @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
         List<BoardCreateResponsetDto> boards = boardService.getRenterBoards(user, status);
         applyWishedStatus(boards, userDetails);
-        return boards;
+        return new BoardListResponseDto(boards, boards.size());
     }
 }

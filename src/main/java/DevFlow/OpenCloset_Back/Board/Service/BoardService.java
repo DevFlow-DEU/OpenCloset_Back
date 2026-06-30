@@ -167,8 +167,8 @@ public class BoardService {
     // ============================================
 
     /**
-     * 게시물 상태 변경 (한 방향만 가능)
-     * 대여가능 → 대여중 (buyerId 필수) → 반납완료
+     * 게시물 상태 변경 (한 방향, 4단계)
+     * 대여가능 → 예약중 (buyerId 필수) → 대여중 → 대여완료
      * 본인(seller)만 변경 가능
      */
     @Transactional
@@ -183,11 +183,11 @@ public class BoardService {
 
         String currentStatus = board.getStatus();
 
-        // 상태 전환 검증: 대여가능 → 대여중 → 반납완료 (한 방향만 가능)
-        if (currentStatus.equals("대여가능") && status.equals("대여중")) {
-            // 대여가능 → 대여중: buyerId 필수
+        // 상태 전환 검증: 대여가능 → 예약중 → 대여중 → 대여완료 (한 방향만 가능)
+        if (currentStatus.equals("대여가능") && status.equals("예약중")) {
+            // 대여가능 → 예약중: buyerId 필수 (예약 단계에서 buyer 지정)
             if (buyerId == null) {
-                throw new IllegalArgumentException("'대여중' 상태로 변경하려면 buyerId를 입력해야 합니다.");
+                throw new IllegalArgumentException("'예약중' 상태로 변경하려면 buyerId를 입력해야 합니다.");
             }
             User buyer = userRepository.findById(buyerId)
                     .orElseThrow(() -> new IllegalArgumentException("구매자(buyer)를 찾을 수 없습니다. id=" + buyerId));
@@ -196,12 +196,15 @@ public class BoardService {
             }
             board.setBuyer(buyer);
 
-        } else if (currentStatus.equals("대여중") && status.equals("반납완료")) {
-            // 대여중 → 반납완료: buyer 유지 (이력 보존)
+        } else if (currentStatus.equals("예약중") && status.equals("대여중")) {
+            // 예약중 → 대여중: 실제로 옷을 건넸을 때 (buyer 유지)
+
+        } else if (currentStatus.equals("대여중") && status.equals("대여완료")) {
+            // 대여중 → 대여완료: 반납 완료 (buyer 유지 — 이력 보존)
 
         } else {
             throw new IllegalArgumentException(
-                    "상태 전환이 불가능합니다. (대여가능→대여중→반납완료 순서만 가능) "
+                    "상태 전환이 불가능합니다. (대여가능→예약중→대여중→대여완료 순서만 가능) "
                     + "현재: " + currentStatus + " → 요청: " + status);
         }
 

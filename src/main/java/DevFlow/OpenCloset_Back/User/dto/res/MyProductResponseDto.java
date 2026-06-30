@@ -24,7 +24,7 @@ public class MyProductResponseDto {
     @Schema(description = "상품 가격", example = "50000")
     private int price;
 
-    @Schema(description = "상품 상태 (대여가능, 대여중, 반납완료)", example = "대여가능")
+    @Schema(description = "상품 상태 (대여가능, 예약중, 대여중, 대여완료)", example = "대여가능")
     private String status;
 
     @Schema(description = "상품 이미지 URL 목록")
