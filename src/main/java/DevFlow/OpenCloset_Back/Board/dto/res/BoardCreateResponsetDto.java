@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Getter
@@ -46,10 +47,13 @@ public class BoardCreateResponsetDto {
     @Schema(description = "카테고리 (top / bottom / outer / one piece / jewelry / shoes / bag)", example = "outer")
     private String category;
 
-    @Schema(description = "대여 가격 (원)", example = "15000")
+    @Schema(description = "1일 대여 가격 (원)", example = "3200")
     private Long price;
 
-    @Schema(description = "상품 상태 (대여가능 / 대여중 / 반납완료)", example = "대여가능")
+    @Schema(description = "대여 일 수 (startDate ~ endDate 사이 일 수)", example = "7")
+    private long rentalDays;
+
+    @Schema(description = "상품 상태 (대여가능 / 예약중 / 대여중 / 대여완료)", example = "대여가능")
     private String status;
 
     @Schema(description = "판매자(seller) ID", example = "3")
@@ -87,12 +91,14 @@ public class BoardCreateResponsetDto {
         this.startDate = entity.getStartDate();
         this.endDate = entity.getEndDate();
         this.price = entity.getPrice();
+        this.rentalDays = (entity.getStartDate() != null && entity.getEndDate() != null)
+                ? ChronoUnit.DAYS.between(entity.getStartDate(), entity.getEndDate()) : 0;
         this.status = entity.getStatus();
         this.sellerId = entity.getSeller().getId();
         this.sellerNickname = entity.getSeller().getNickname();
         this.buyerId = entity.getBuyer() != null ? entity.getBuyer().getId() : null;
         this.buyerNickname = entity.getBuyer() != null ? entity.getBuyer().getNickname() : null;
         this.createAt = entity.getCreatedAt();
-        this.isWished = false; // TODO: 실제 로직 구현 시 유저별 찜 여부 매핑 필요
+        this.isWished = false; // 실제 매핑은 Controller의 applyWishedStatus에서 수행
     }
 }

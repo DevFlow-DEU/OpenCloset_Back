@@ -45,7 +45,7 @@ public class BoardSearchResponseDto {
     @Schema(description = "게시물 생성일")
     private LocalDateTime createdAt;
 
-    @Schema(description = "상품 상태 (대여가능 / 대여중 / 반납완료)", example = "대여가능")
+    @Schema(description = "상품 상태 (대여가능 / 예약중 / 대여중 / 대여완료)", example = "대여가능")
     private String status;
 
     @Schema(description = "카테고리", example = "outer")

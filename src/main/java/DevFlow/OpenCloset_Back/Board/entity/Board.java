@@ -65,7 +65,7 @@ public class Board implements Serializable {
 
     // 상품 상태 - default: 대여가능
     @Column(nullable = false)
-    private String status; // 대여가능 / 대여중 / 반납완료
+    private String status; // 대여가능 / 예약중 / 대여중 / 대여완료
 
     @CreatedDate
     private LocalDateTime createdAt;
