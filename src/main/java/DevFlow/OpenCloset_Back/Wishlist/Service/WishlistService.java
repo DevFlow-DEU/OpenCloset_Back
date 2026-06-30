@@ -48,14 +48,17 @@ public class WishlistService {
     }
 
     /**
-     * 내 찜 목록 조회
-     * 찜한 게시물 목록을 BoardCreateResponsetDto로 반환 (isWished = true)
+     * 내 찜 목록 조회 (상태 및 카테고리 필터 지원)
+     * 파라미터가 null이면 전체 조회, 지정 시 필터링
+     * 찜한 게시물이므로 isWished = true
      */
     @Transactional(readOnly = true)
-    public List<BoardCreateResponsetDto> getMyWishlist(User user) {
+    public List<BoardCreateResponsetDto> getMyWishlist(User user, String status, String category) {
         List<Wishlist> wishlists = wishlistRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
 
         return wishlists.stream()
+                .filter(w -> status == null || status.trim().isEmpty() || w.getBoard().getStatus().equals(status))
+                .filter(w -> category == null || category.trim().isEmpty() || w.getBoard().getCategory().equalsIgnoreCase(category.trim()))
                 .map(w -> {
                     BoardCreateResponsetDto dto = new BoardCreateResponsetDto(w.getBoard());
                     dto.setIsWished(true); // 내 찜 목록이므로 전부 true
