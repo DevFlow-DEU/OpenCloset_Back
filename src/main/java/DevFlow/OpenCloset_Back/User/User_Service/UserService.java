@@ -109,7 +109,7 @@ public class UserService {
     }
 
     @Transactional
-    public void updateProfile(String email, MultipartFile file, String nickname, String address) throws IOException {
+    public void updateProfile(String email, MultipartFile file, String nickname, String address, String password) throws IOException {
         User user = findByEmail(email);
 
         // 1. 프로필 이미지 업데이트
@@ -140,6 +140,11 @@ public class UserService {
         // 3. 주소 업데이트
         if (address != null && !address.trim().isEmpty() && !address.equals(user.getAddress())) {
             user.setAddress(address);
+        }
+
+        // 4. 비밀번호 업데이트
+        if (password != null && !password.trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(password));
         }
 
         userRepository.save(user);

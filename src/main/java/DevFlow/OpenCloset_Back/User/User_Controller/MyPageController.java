@@ -47,7 +47,7 @@ public class MyPageController {
                 return ResponseEntity.ok(profile);
         }
 
-        @Operation(summary = "프로필 통합 수정", description = "기존에 분리되어 있던 이미지, 닉네임, 주소 변경을 한 번에 처리하는 API입니다. 변경을 원하는 필드 값(FormData 형식)만 채워서 보내면 됩니다. 변경하지 않을 값은 빈 값으로 두거나 안 보내도 됩니다. JWT 토큰이 필수입니다.")
+        @Operation(summary = "프로필 통합 수정", description = "기존에 분리되어 있던 이미지, 닉네임, 주소, 비밀번호 변경을 한 번에 처리하는 API입니다. 변경을 원하는 필드 값(FormData 형식)만 채워서 보내면 됩니다. 변경하지 않을 값은 빈 값으로 두거나 안 보내도 됩니다. JWT 토큰이 필수입니다.")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "프로필 수정 성공", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"프로필 정보가 성공적으로 수정되었습니다.\"}"))),
                         @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 닉네임 중복", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"이미 사용 중인 닉네임입니다.\"}"))),
@@ -58,10 +58,11 @@ public class MyPageController {
                         @AuthenticationPrincipal UserDetails userDetails,
                         @RequestParam(value = "profileImage", required = false) MultipartFile file,
                         @RequestParam(value = "nickname", required = false) String nickname,
-                        @RequestParam(value = "address", required = false) String address) {
+                        @RequestParam(value = "address", required = false) String address,
+                        @RequestParam(value = "password", required = false) String password) {
                 String email = userDetails.getUsername();
                 try {
-                        userService.updateProfile(email, file, nickname, address);
+                        userService.updateProfile(email, file, nickname, address, password);
                         return ResponseEntity.ok(Map.of("message", "프로필 정보가 성공적으로 수정되었습니다."));
                 } catch (IOException e) {
                         e.printStackTrace();
