@@ -74,8 +74,15 @@ public class BoardCreateResponsetDto {
     @Schema(description = "내가 찜한 상품인지 여부 (로그인 안 했으면 기본 false)", example = "false")
     private boolean isWished;
 
+    @Schema(description = "내가 등록한 상품인지 여부 (로그인 안 했으면 기본 false)", example = "false")
+    private boolean isOwner;
+
     public void setIsWished(boolean isWished) {
         this.isWished = isWished;
+    }
+
+    public void setIsOwner(boolean isOwner) {
+        this.isOwner = isOwner;
     }
 
     public BoardCreateResponsetDto(Board entity) {
@@ -92,13 +99,15 @@ public class BoardCreateResponsetDto {
         this.endDate = entity.getEndDate();
         this.price = entity.getPrice();
         this.rentalDays = (entity.getStartDate() != null && entity.getEndDate() != null)
-                ? ChronoUnit.DAYS.between(entity.getStartDate(), entity.getEndDate()) : 0;
+                ? ChronoUnit.DAYS.between(entity.getStartDate(), entity.getEndDate())
+                : 0;
         this.status = entity.getStatus();
         this.sellerId = entity.getSeller().getId();
         this.sellerNickname = entity.getSeller().getNickname();
         this.buyerId = entity.getBuyer() != null ? entity.getBuyer().getId() : null;
         this.buyerNickname = entity.getBuyer() != null ? entity.getBuyer().getNickname() : null;
         this.createAt = entity.getCreatedAt();
-        this.isWished = false; // 실제 매핑은 Controller의 applyWishedStatus에서 수행
+        this.isWished = false;
+        this.isOwner = false;
     }
 }

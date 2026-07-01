@@ -36,17 +36,29 @@ public class BoardController {
     private final CustomUserDetailsService customUserDetailsService;
 
     /**
-     * DTO 리스트에 로그인 유저의 찜 여부를 일괄 매핑하는 헬퍼 메서드
+     * DTO 리스트에 로그인 유저의 찜 여부 및 본인 상품 여부를 일괄 매핑하는 헬퍼 메서드
      */
     private void applyWishedStatus(List<BoardCreateResponsetDto> dtos, UserDetails userDetails) {
-        if (userDetails == null || dtos.isEmpty())
+        if (dtos.isEmpty())
             return;
+
+        if (userDetails == null) {
+            dtos.forEach(dto -> {
+                dto.setIsWished(false);
+                dto.setIsOwner(false);
+            });
+            return;
+        }
+
         User user = userService.findByEmail(userDetails.getUsername());
         Set<Long> wishedIds = wishlistService.getWishedBoardIds(user.getId());
-        dtos.forEach(dto -> dto.setIsWished(wishedIds.contains(dto.getId())));
+        dtos.forEach(dto -> {
+            dto.setIsWished(wishedIds.contains(dto.getId()));
+            dto.setIsOwner(user.getId().equals(dto.getSellerId()));
+        });
     }
 
-    @Operation(summary = "전체 게시물 목록 조회", description = "모든 게시물을 최신순으로 조회합니다. 로그인 상태이면 같은 주소(address) 기반으로 필터링된 게시물을 반환하며, 찜 여부(isWished)가 매핑됩니다. 비로그인 시 전체 게시물을 반환합니다.")
+    @Operation(summary = "전체 게시물 목록 조회", description = "모든 게시물을 최신순으로 조회합니다. 로그인 상태이면 같은 주소(address) 기반으로 필터링된 게시물을 반환하며, 찜 여부(isWished)와 본인 게시글 여부(isOwner)가 매핑됩니다. 비로그인 시 전체 게시물을 반환합니다.")
     @ApiResponse(responseCode = "200", description = "게시물 목록 조회 성공")
     @GetMapping("/All")
     public List<BoardCreateResponsetDto> getPosts(@AuthenticationPrincipal UserDetails userDetails) {
@@ -74,10 +86,12 @@ public class BoardController {
         User seller = userService.findByEmail(email);
         logger.info("조회된 판매자(seller) ID: {}", seller.getId());
 
-        return boardService.createBoard(requestDto, seller);
+        BoardCreateResponsetDto dto = boardService.createBoard(requestDto, seller);
+        dto.setIsOwner(true); // 생성한 본인이기 때문에 무조건 true
+        return dto;
     }
 
-    @Operation(summary = "특정 게시물 상세 조회", description = "게시물 ID로 상세 정보를 조회합니다. seller/buyer 정보, 상태, 좌표, 대여기간, 이미지 목록, 찜 여부가 포함됩니다.")
+    @Operation(summary = "특정 게시물 상세 조회", description = "게시물 ID로 상세 정보를 조회합니다. seller/buyer 정보, 상태, 좌표, 대여기간, 이미지 목록, 찜 여부, 본인 게시물 여부가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "게시물 조회 성공")
     @GetMapping("/{id}")
     public BoardCreateResponsetDto getPost(
@@ -87,6 +101,10 @@ public class BoardController {
         if (userDetails != null) {
             User user = userService.findByEmail(userDetails.getUsername());
             dto.setIsWished(wishlistService.isWished(user.getId(), id));
+            dto.setIsOwner(user.getId().equals(dto.getSellerId()));
+        } else {
+            dto.setIsWished(false);
+            dto.setIsOwner(false);
         }
         return dto;
     }
