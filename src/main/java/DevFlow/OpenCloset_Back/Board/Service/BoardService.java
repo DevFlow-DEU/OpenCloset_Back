@@ -1,7 +1,7 @@
 package DevFlow.OpenCloset_Back.Board.Service;
 
 import DevFlow.OpenCloset_Back.Board.Repository.*;
-import DevFlow.OpenCloset_Back.Board.dto.req.BoardCreateRequestDto;
+import DevFlow.OpenCloset_Back.Board.dto.req.*;
 import DevFlow.OpenCloset_Back.Board.dto.res.*;
 import DevFlow.OpenCloset_Back.Board.entity.*;
 import DevFlow.OpenCloset_Back.Board.Repository.BoardRepository;
@@ -277,4 +277,113 @@ public class BoardService {
                 .toList();
     }
 
+    /**
+     * 게시물 수정 (내용, 카테고리, 이미지 등)
+     * 본인(seller)만 수정 가능
+     */
+    @Transactional
+    public BoardCreateResponsetDto updateBoard(Long boardId, BoardUpdateRequestDto req, User user) throws IOException {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("게시물을 찾을 수 없습니다. id=" + boardId));
+
+        // 본인 게시물인지 확인
+        if (!board.getSeller().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("본인의 게시물만 수정할 수 있습니다.");
+        }
+
+        // 1. 기본 필드 업데이트 (null 또는 빈 값이 아닌 경우에만 부분 수정)
+        if (req.getTitle() != null && !req.getTitle().trim().isEmpty()) {
+            board.setTitle(req.getTitle());
+        }
+        if (req.getDescription() != null && !req.getDescription().trim().isEmpty()) {
+            board.setDescription(req.getDescription());
+        }
+        if (req.getSize() != null && !req.getSize().trim().isEmpty()) {
+            board.setSize(req.getSize());
+        }
+        if (req.getSex() != null && !req.getSex().trim().isEmpty()) {
+            board.setSex(req.getSex());
+        }
+        if (req.getLatitude() != null) {
+            board.setLatitude(req.getLatitude());
+        }
+        if (req.getLongitude() != null) {
+            board.setLongitude(req.getLongitude());
+        }
+        if (req.getPrice() != null) {
+            board.setPrice(req.getPrice());
+        }
+        if (req.getStartDate() != null) {
+            board.setStartDate(req.getStartDate());
+        }
+        if (req.getEndDate() != null) {
+            board.setEndDate(req.getEndDate());
+        }
+
+        // 2. 이미지 업데이트 (신규 이미지가 들어왔을 때만 교체)
+        List<MultipartFile> files = req.getImages();
+        if (files != null && !files.isEmpty()) {
+            List<String> imagePaths = new ArrayList<>();
+            String uploadDir = "uploads/boards/";
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            for (MultipartFile file : files) {
+                if (file != null && !file.isEmpty()) {
+                    String originalFilename = file.getOriginalFilename();
+                    String uniqueFilename = System.currentTimeMillis() + "_" + originalFilename;
+                    Path filePath = uploadPath.resolve(uniqueFilename);
+                    file.transferTo(filePath.toFile());
+                    imagePaths.add("/" + uploadDir + uniqueFilename);
+                }
+            }
+
+            if (!imagePaths.isEmpty()) {
+                board.setImages(imagePaths);
+            }
+        }
+
+        // 3. 카테고리 변경 시 매핑 테이블 업데이트
+        String oldCategory = board.getCategory();
+        String newCategory = req.getCategory();
+        if (newCategory != null && !newCategory.trim().isEmpty() && !newCategory.equals(oldCategory)) {
+            deleteCategoryMapping(board);
+            board.setCategory(newCategory);
+            saveCategoryMapping(board, newCategory);
+        }
+
+        boardRepository.save(board);
+        return new BoardCreateResponsetDto(board);
+    }
+
+    private void deleteCategoryMapping(Board board) {
+        String category = board.getCategory();
+        if (category == null) return;
+
+        List<Board> boards = List.of(board);
+        switch (category) {
+            case "top" -> topRepository.deleteByBoardIn(boards);
+            case "bottom" -> bottomRepository.deleteByBoardIn(boards);
+            case "outer" -> outerRepository.deleteByBoardIn(boards);
+            case "jewelry" -> jewelryRepossitory.deleteByBoardIn(boards);
+            case "one piece" -> onePieceRepository.deleteByBoardIn(boards);
+            case "shoes" -> shoesRepository.deleteByBoardIn(boards);
+            case "bag" -> bagRepository.deleteByBoardIn(boards);
+        }
+    }
+
+    private void saveCategoryMapping(Board board, String category) {
+        switch (category) {
+            case "top" -> topRepository.save(new Top(board));
+            case "bottom" -> bottomRepository.save(new Bottom(board));
+            case "outer" -> outerRepository.save(new Outer_(board));
+            case "jewelry" -> jewelryRepossitory.save(new Jewelry(board));
+            case "one piece" -> onePieceRepository.save(new One_Piece(board));
+            case "shoes" -> shoesRepository.save(new Shoes(board));
+            case "bag" -> bagRepository.save(new Bag(board));
+        }
+    }
 }

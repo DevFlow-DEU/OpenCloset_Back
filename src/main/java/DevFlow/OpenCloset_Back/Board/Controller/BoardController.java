@@ -1,7 +1,7 @@
 package DevFlow.OpenCloset_Back.Board.Controller;
 
 import DevFlow.OpenCloset_Back.Board.Service.BoardService;
-import DevFlow.OpenCloset_Back.Board.dto.req.BoardCreateRequestDto;
+import DevFlow.OpenCloset_Back.Board.dto.req.*;
 import DevFlow.OpenCloset_Back.Board.dto.res.*;
 import DevFlow.OpenCloset_Back.Security.CustomUserDetailsService;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
@@ -88,6 +88,23 @@ public class BoardController {
 
         BoardCreateResponsetDto dto = boardService.createBoard(requestDto, seller);
         dto.setIsOwner(true); // 생성한 본인이기 때문에 무조건 true
+        return dto;
+    }
+
+    @Operation(summary = "게시물 수정 (로직 구현됨 ✅)", description = "본인이 작성한 게시물을 수정합니다. 카테고리가 바뀌면 서브 테이블 매핑도 자동으로 이전됩니다. 이미지를 보내면 새 이미지로 덮어써집니다. (토큰 인증 필수)")
+    @ApiResponse(responseCode = "200", description = "게시물 수정 성공")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public BoardCreateResponsetDto updateBoard(
+            @io.swagger.v3.oas.annotations.Parameter(description = "수정할 게시물 ID", example = "1") @PathVariable Long id,
+            @ModelAttribute BoardUpdateRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+
+        String email = userDetails.getUsername();
+        User user = userService.findByEmail(email);
+
+        BoardCreateResponsetDto dto = boardService.updateBoard(id, requestDto, user);
+        dto.setIsOwner(true); // 수정한 본인이기 때문에 무조건 true
+        dto.setIsWished(wishlistService.isWished(user.getId(), id)); // 본인의 기존 찜 여부 매핑
         return dto;
     }
 
