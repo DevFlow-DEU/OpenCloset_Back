@@ -205,7 +205,7 @@ public class BoardService {
         } else {
             throw new IllegalArgumentException(
                     "상태 전환이 불가능합니다. (대여가능→예약중→대여중→대여완료 순서만 가능) "
-                    + "현재: " + currentStatus + " → 요청: " + status);
+                            + "현재: " + currentStatus + " → 요청: " + status);
         }
 
         board.setStatus(status);
@@ -361,7 +361,8 @@ public class BoardService {
 
     private void deleteCategoryMapping(Board board) {
         String category = board.getCategory();
-        if (category == null) return;
+        if (category == null)
+            return;
 
         List<Board> boards = List.of(board);
         switch (category) {

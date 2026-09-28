@@ -45,6 +45,10 @@ dependencies {
 	runtimeOnly('io.jsonwebtoken:jjwt-jackson:0.11.5')
 	// Swagger (Springdoc OpenAPI)
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4'
+	// WebSocket (STOMP)
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	// Redis (Pub/Sub + 캐시)
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 tasks.named('test') {

@@ -69,7 +69,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/password-change", "/auth/delete").authenticated()
                         .requestMatchers("/", "/auth/register", "/auth/login", "/auth/logout", "/auth/refresh",
                                 "/search",
-                                "/api/**", "/uploads/**", "/images/**")
+                                "/api/**", "/uploads/**", "/images/**",
+                                "/ws/**") // WebSocket 핸드셰이크 허용
                         .permitAll()
                         .requestMatchers("/auth/**", "/auth/kakao/**", "/search", "/error").permitAll()
                         // Swagger UI 허용

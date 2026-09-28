@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
@@ -14,6 +15,10 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     // 특정 게시물에 대한 모든 채팅방 (= 해당 상품에 관심있는 wearer 리스트)
     List<ChatRoom> findByBoardId(Long boardId);
 
+    // 특정 게시물 + 특정 wearer의 채팅방 (중복 방지)
+    Optional<ChatRoom> findByBoardIdAndWearerId(Long boardId, Long wearerId);
+
     // 회원 탈퇴 시 채팅방 삭제
     void deleteBySellerIdOrWearerId(Long sellerId, Long wearerId);
 }
+
