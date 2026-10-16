@@ -34,6 +34,9 @@ public class BoardUpdateRequestDto {
     @Schema(description = "거래 장소 경도 (longitude)", example = "129.0756")
     private Double longitude;
 
+    @Schema(description = "거래 장소 상세 주소", example = "101동 1203호")
+    private String detailAddress;
+
     @Schema(description = "대여 가격 (원 단위)", example = "15000")
     private Long price;
 

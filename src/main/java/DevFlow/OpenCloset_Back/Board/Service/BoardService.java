@@ -310,6 +310,9 @@ public class BoardService {
         if (req.getLongitude() != null) {
             board.setLongitude(req.getLongitude());
         }
+        if (req.getDetailAddress() != null) {
+            board.setDetailAddress(req.getDetailAddress());
+        }
         if (req.getPrice() != null) {
             board.setPrice(req.getPrice());
         }

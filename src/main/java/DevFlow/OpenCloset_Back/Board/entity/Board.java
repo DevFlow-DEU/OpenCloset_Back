@@ -51,6 +51,9 @@ public class Board implements Serializable {
     @Column(nullable = false)
     private Double longitude; // 경도
 
+    @Column
+    private String detailAddress; // 거래 장소 상세 주소
+
     @Column(nullable = false)
     private Long price;
 
@@ -91,6 +94,7 @@ public class Board implements Serializable {
         this.size = req.getSize();
         this.latitude = req.getLatitude();
         this.longitude = req.getLongitude();
+        this.detailAddress = req.getDetailAddress();
         this.price = req.getPrice();
         this.startDate = req.getStartDate();
         this.endDate = req.getEndDate();

@@ -38,6 +38,9 @@ public class BoardCreateResponsetDto {
     @Schema(description = "거래 장소 경도", example = "129.0756")
     private Double longitude;
 
+    @Schema(description = "거래 장소 상세 주소", example = "101동 1203호")
+    private String detailAddress;
+
     @Schema(description = "대여 시작일", example = "2026-05-01")
     private LocalDate startDate;
 
@@ -94,6 +97,7 @@ public class BoardCreateResponsetDto {
         this.sex = entity.getSex();
         this.latitude = entity.getLatitude();
         this.longitude = entity.getLongitude();
+        this.detailAddress = entity.getDetailAddress();
         this.category = entity.getCategory();
         this.startDate = entity.getStartDate();
         this.endDate = entity.getEndDate();
