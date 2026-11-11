@@ -90,6 +90,10 @@ public class BoardService {
 
     @Transactional
     public BoardCreateResponsetDto createBoard(BoardCreateRequestDto req, User seller) throws IOException {
+        String profileAddress = seller.getAddress();
+        if (profileAddress == null || profileAddress.isBlank() || "주소 미입력".equals(profileAddress.strip())) {
+            throw new IllegalArgumentException("상품을 등록하려면 먼저 내 동네를 설정해 주세요.");
+        }
 
         List<MultipartFile> files = req.getImages();
         List<String> imagePaths = new ArrayList<>();

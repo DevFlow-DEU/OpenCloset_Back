@@ -16,6 +16,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 
@@ -74,8 +78,16 @@ public class BoardController {
         return posts;
     }
 
-    @Operation(summary = "새 게시물 생성", description = "새로운 옷 대여 게시물을 작성. 작성자가 seller(판매자)로 자동 등록됨. (토큰 인증 필수)")
-    @ApiResponse(responseCode = "200", description = "게시물 생성 성공")
+    @Operation(summary = "새 게시물 생성", description = "새로운 옷 대여 게시물을 작성합니다. 작성자는 로그인 사용자(seller)로 지정됩니다. "
+            + "판매자의 프로필에 내 동네가 등록되어 있어야 하며, 미등록 시 이미지·게시글 저장 전에 400을 반환합니다. "
+            + "상품 폼의 detailAddress, latitude, longitude는 상품별 거래 장소이며 프로필 주소를 대체하지 않습니다. (토큰 인증 필수)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시물 생성 성공",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BoardCreateResponsetDto.class))),
+            @ApiResponse(responseCode = "400", description = "판매자의 프로필 동네 미등록 등 잘못된 등록 요청",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "내 동네 미설정",
+                            value = "{\"status\":400,\"error\":\"Bad Request\",\"message\":\"상품을 등록하려면 먼저 내 동네를 설정해 주세요.\",\"timestamp\":\"2026-11-11T10:00:00\"}")))
+    })
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BoardCreateResponsetDto createBoard(@ModelAttribute BoardCreateRequestDto requestDto,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
