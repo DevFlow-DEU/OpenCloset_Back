@@ -2,6 +2,19 @@
 .git
 .gitignore
 
+# Keep local credentials, data, and caches out of every build context/stage.
+.env
+.env.*
+!.env.example
+.gradle/
+bin/
+uploads/
+mariadb_data/
+redis_data/
+.aws/
+.codex/
+.agents/
+
 # IDE 설정
 *.iml
 .idea/
@@ -15,8 +28,7 @@ out/
 .DS_Store
 Thumbs.db
 
-# 테스트 소스
-**/test/
+# Python 캐시
 **/__pycache__/
 
 # Dockerfile 자체 무시 (빌드에는 포함되지만 COPY 등에 사용되지 않도록)
