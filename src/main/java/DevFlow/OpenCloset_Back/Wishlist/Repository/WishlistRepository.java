@@ -2,13 +2,19 @@ package DevFlow.OpenCloset_Back.Wishlist.Repository;
 
 import DevFlow.OpenCloset_Back.Wishlist.Entity.Wishlist;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
+
+    @Query("select w.board.id from Wishlist w where w.user.id = :userId and w.board.id in :boardIds")
+    Set<Long> findWishedBoardIdsIn(@Param("userId") Long userId, @Param("boardIds") List<Long> boardIds);
 
     // 유저 + 게시물로 찜 데이터 조회
     Optional<Wishlist> findByUserIdAndBoardId(Long userId, Long boardId);

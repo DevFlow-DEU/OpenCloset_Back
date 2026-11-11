@@ -19,11 +19,11 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
         @Query("select b from Board b where b.id = :id")
         Optional<Board> findByIdForChatUpdate(@Param("id") Long id);
 
-        List<Board> findAllByOrderByModifiedAtDesc();
-
         List<Board> findBySeller_Address(String address);
 
-        List<Board> findBySeller_AddressOrderByModifiedAtDesc(String address);
+        // The page has already been limited in SQL; load its images without collection-fetch pagination.
+        @Query("select distinct b from Board b left join fetch b.images where b.id in :ids")
+        List<Board> fetchListImages(@Param("ids") List<Long> ids);
 
         List<Board> findBySellerId(Long sellerId);
 

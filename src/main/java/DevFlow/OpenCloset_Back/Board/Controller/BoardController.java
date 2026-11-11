@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
@@ -62,20 +63,27 @@ public class BoardController {
         });
     }
 
-    @Operation(summary = "전체 게시물 목록 조회", description = "모든 게시물을 최신순으로 조회합니다. 로그인 상태이면 같은 주소(address) 기반으로 필터링된 게시물을 반환하며, 찜 여부(isWished)와 본인 게시글 여부(isOwner)가 매핑됩니다. 비로그인 시 전체 게시물을 반환합니다.")
-    @ApiResponse(responseCode = "200", description = "게시물 목록 조회 성공")
+    @Operation(summary = "상품 목록 커서 조회", description = "로그인 사용자의 프로필 주소와 같은 판매자의 상품을 수정일 내림차순·ID 내림차순으로 조회합니다. "
+            + "size는 기본 20, 최대 100이며 첫 요청에서는 cursor를 생략합니다. 다음 요청에 nextCursor를 그대로 전달하고 hasNext가 false이면 중단합니다. "
+            + "응답은 기존 배열에서 items, nextCursor, hasNext 객체로 변경되었습니다. 전체 개수는 집계하지 않습니다. "
+            + "조회 중 상품이 수정되면 정렬 위치가 바뀌어 누락·중복될 수 있으므로 새로고침 시 cursor를 초기화합니다. (토큰 인증 필수)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "상품 목록 조회 성공",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BoardCursorResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 커서 또는 조회 개수",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(
+                            value = "{\"status\":400,\"error\":\"Bad Request\",\"message\":\"상품 조회 개수는 1~100개여야 합니다.\",\"timestamp\":\"2026-11-11T10:00:00\"}"))),
+            @ApiResponse(responseCode = "401", description = "토큰 누락·오류·만료")
+    })
     @GetMapping("/All")
-    public List<BoardCreateResponsetDto> getPosts(@AuthenticationPrincipal UserDetails userDetails) {
-        List<BoardCreateResponsetDto> posts;
-        if (userDetails != null) {
-            String email = userDetails.getUsername();
-            User loginUser = userService.findByEmail(email);
-            posts = boardService.getPostsByAddress(loginUser.getAddress());
-        } else {
-            posts = boardService.getPosts();
-        }
-        applyWishedStatus(posts, userDetails);
-        return posts;
+    public BoardCursorResponseDto getPosts(
+            @Parameter(description = "직전 응답의 nextCursor. 첫 요청은 생략") @RequestParam(required = false) String cursor,
+            @Parameter(description = "조회 개수 (1~100, 기본 20)", example = "20",
+                    schema = @Schema(type = "integer", format = "int32", defaultValue = "20", minimum = "1", maximum = "100"))
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
+        User loginUser = userService.findByEmail(userDetails.getUsername());
+        return boardService.getPosts(loginUser, cursor, size);
     }
 
     @Operation(summary = "새 게시물 생성", description = "새로운 옷 대여 게시물을 작성합니다. 작성자는 로그인 사용자(seller)로 지정됩니다. "

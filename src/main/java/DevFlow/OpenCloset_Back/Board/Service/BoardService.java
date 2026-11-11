@@ -8,6 +8,7 @@ import DevFlow.OpenCloset_Back.Board.Repository.BoardRepository;
 import DevFlow.OpenCloset_Back.Board.entity.Board;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.entity.User;
+import DevFlow.OpenCloset_Back.Wishlist.Repository.WishlistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
@@ -33,10 +35,33 @@ public class BoardService {
     private final ShoesRepository shoesRepository;
     private final BagRepository bagRepository;
     private final UserRepository userRepository;
+    private final BoardListRepository boardListRepository;
+    private final WishlistRepository wishlistRepository;
 
     @Transactional(readOnly = true)
-    public List<BoardCreateResponsetDto> getPosts() {
-        return boardRepository.findAllByOrderByModifiedAtDesc().stream().map(BoardCreateResponsetDto::new).toList();
+    public BoardCursorResponseDto getPosts(User loginUser, String cursor, int size) {
+        if (size < 1 || size > 100) {
+            throw new IllegalArgumentException("상품 조회 개수는 1~100개여야 합니다.");
+        }
+        BoardListCursor position = BoardListCursor.decode(cursor);
+        List<Board> window = boardListRepository.findWindow(loginUser.getAddress(),
+                position == null ? null : position.modifiedAt(), position == null ? null : position.id(), size + 1);
+        boolean hasNext = window.size() > size;
+        List<Board> page = hasNext ? window.subList(0, size) : window;
+        if (page.isEmpty()) return new BoardCursorResponseDto(List.of(), null, false);
+
+        List<Long> ids = page.stream().map(Board::getId).toList();
+        boardRepository.fetchListImages(ids);
+        Set<Long> wishedIds = wishlistRepository.findWishedBoardIdsIn(loginUser.getId(), ids);
+        List<BoardCreateResponsetDto> items = page.stream().map(board -> {
+            BoardCreateResponsetDto dto = new BoardCreateResponsetDto(board);
+            dto.setIsWished(wishedIds.contains(board.getId()));
+            dto.setIsOwner(loginUser.getId().equals(board.getSeller().getId()));
+            return dto;
+        }).toList();
+        Board last = page.get(page.size() - 1);
+        String nextCursor = hasNext ? new BoardListCursor(last.getModifiedAt(), last.getId()).encode() : null;
+        return new BoardCursorResponseDto(items, nextCursor, hasNext);
     }
 
     @Transactional(readOnly = true)
@@ -150,14 +175,6 @@ public class BoardService {
         }
 
         return new BoardCreateResponsetDto(board);
-    }
-
-    @Transactional(readOnly = true)
-    public List<BoardCreateResponsetDto> getPostsByAddress(String address) {
-        return boardRepository.findBySeller_AddressOrderByModifiedAtDesc(address)
-                .stream()
-                .map(BoardCreateResponsetDto::new)
-                .toList();
     }
 
     @Transactional
