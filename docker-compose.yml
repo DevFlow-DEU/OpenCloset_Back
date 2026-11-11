@@ -14,20 +14,35 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  # 채팅 Pub/Sub용 Redis (Compose 내부 네트워크에서만 접근)
+  redis:
+    image: redis:7.4-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # 스프링 부트 애플리케이션 서비스
   app:
     build: .
     container_name: opencloset-app
     restart: always
-    # DB가 먼저 뜬 다음에 앱이 뜨도록 설정
+    # Redis가 연결을 받을 준비가 된 다음에 앱을 시작합니다.
     depends_on:
-      - db
+      db:
+        condition: service_started
+      redis:
+        condition: service_healthy
     ports:
       - "80:8080"
     env_file: .env
     environment:
       # [중요] 컨테이너 환경에서는 localhost가 아닌 서비스 이름(db)으로 접속해야 합니다.
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OpenCloset?createDatabaseIfNotExist=true&sslMode=disable
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
     volumes:
       - ./uploads:/uploads
 
