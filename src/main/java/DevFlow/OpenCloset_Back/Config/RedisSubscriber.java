@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.core.RedisTemplate;
+import DevFlow.OpenCloset_Back.Chat.dto.res.ChatMessageResponseDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 /**
  * Redis Pub/Sub 구독자
@@ -20,17 +23,20 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RedisSubscriber implements MessageListener {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private static final Pattern ROOM_CHANNEL = Pattern.compile("^chat:room:([1-9][0-9]*)$");
+    private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-            String channel = new String(message.getChannel());
-            // 채널 형식: chat:room:{roomId}
-            String roomId = channel.replace("chat:room:", "");
-
-            Object chatMessage = redisTemplate.getValueSerializer().deserialize(message.getBody());
+            String channel = new String(message.getChannel(), StandardCharsets.UTF_8);
+            var matcher = ROOM_CHANNEL.matcher(channel);
+            if (!matcher.matches()) {
+                return;
+            }
+            String roomId = matcher.group(1);
+            ChatMessageResponseDto chatMessage = objectMapper.readValue(message.getBody(), ChatMessageResponseDto.class);
 
             // WebSocket 구독자에게 전달
             messagingTemplate.convertAndSend("/topic/chat/" + roomId, chatMessage);

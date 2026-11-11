@@ -4,13 +4,21 @@ import DevFlow.OpenCloset_Back.Board.entity.Board;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BoardRepository extends JpaRepository<Board, Long> {
+        // 같은 상품의 채팅방 동시 생성 및 거래 확정을 직렬화합니다.
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("select b from Board b where b.id = :id")
+        Optional<Board> findByIdForChatUpdate(@Param("id") Long id);
+
         List<Board> findAllByOrderByModifiedAtDesc();
 
         List<Board> findBySeller_Address(String address);

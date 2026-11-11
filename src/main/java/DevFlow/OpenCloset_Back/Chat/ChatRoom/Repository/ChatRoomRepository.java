@@ -18,6 +18,8 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     // 특정 게시물 + 특정 wearer의 채팅방 (중복 방지)
     Optional<ChatRoom> findByBoardIdAndWearerId(Long boardId, Long wearerId);
 
+    boolean existsByBoardIdAndWearerId(Long boardId, Long wearerId);
+
     // 회원 탈퇴 시 채팅방 삭제
     void deleteBySellerIdOrWearerId(Long sellerId, Long wearerId);
 }

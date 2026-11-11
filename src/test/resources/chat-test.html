@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenCloset 채팅 직접 테스트</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3f5f8; color: #172033; font: 15px/1.6 system-ui, sans-serif; }
+    main { max-width: 1160px; margin: 32px auto; padding: 0 20px; }
+    h1 { font-size: 27px; margin-bottom: 4px; }
+    h2 { font-size: 18px; margin: 0; }
+    p { margin: 8px 0; }
+    .muted { color: #596579; font-size: 13px; }
+    .setup, .panel { background: white; border: 1px solid #dbe1ea; border-radius: 12px; padding: 20px; }
+    .setup { margin: 22px 0; }
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    input, textarea { border: 1px solid #bac4d2; border-radius: 6px; padding: 9px 12px; font: inherit; }
+    input { width: 260px; }
+    textarea { width: 100%; height: 80px; resize: vertical; margin: 12px 0 6px; }
+    button { border: 1px solid #c3ccda; border-radius: 6px; padding: 8px 13px; background: white; cursor: pointer; color: #172033; font: inherit; }
+    button.primary { background: #2458ca; border-color: #2458ca; color: white; }
+    button:disabled { opacity: .45; cursor: default; }
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .status { border-radius: 20px; padding: 3px 10px; font-size: 12px; background: #edf0f5; }
+    .status.live { background: #dcf7e8; color: #14643b; }
+    .messages { height: 320px; overflow-y: auto; background: #f6f8fb; padding: 12px; margin: 16px 0 12px; border-radius: 6px; }
+    .message { background: white; border: 1px solid #dce3ec; border-radius: 8px; padding: 9px 12px; margin: 8px 0; overflow-wrap: anywhere; }
+    .message.mine { background: #e8efff; border-color: #c7d7ff; }
+    .message .text { white-space: pre-wrap; }
+    .meta { color: #637187; font-size: 11px; }
+    .error { color: #aa2034; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 24px; }
+    .notice { white-space: pre-wrap; overflow-wrap: anywhere; }
+    #fixture { margin-top: 12px; }
+    code { background: #e9edf3; border-radius: 3px; padding: 1px 4px; }
+    @media (max-width: 760px) { .panels { grid-template-columns: 1fr; } main { margin: 16px auto; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>OpenCloset 채팅 직접 테스트</h1>
+  <p>서로 다른 두 사용자로 실제 로그인하고 WebSocket으로 대화합니다.</p>
+  <section class="setup">
+    <div class="row">
+      <label for="api">로컬 API 주소</label>
+      <input id="api" value="http://localhost:18080" type="url">
+      <button id="prepare" class="primary">1. 테스트 준비</button>
+    </div>
+    <p class="muted">준비 버튼을 누르면 로컬 DB에 테스트 계정 2개·상품 1개·채팅방 1개를 생성합니다. 실제 계정은 사용하지 않습니다.</p>
+    <p class="muted">IntelliJ에서 앱을 실행했다면 주소를 <code>http://localhost:8080</code>으로 바꾸세요. 로컬 주소만 허용합니다.</p>
+    <div id="fixture" class="notice" role="status">먼저 백엔드와 DB·Redis를 실행하고 테스트를 준비하세요.</div>
+    <div id="setup-error" class="error" role="alert"></div>
+    <details id="accounts" hidden>
+      <summary>생성된 테스트 계정 정보 (Swagger에서 재사용 가능)</summary>
+      <pre id="credentials"></pre>
+    </details>
+  </section>
+
+  <div class="panels" id="panels"></div>
+
+  <section class="setup">
+    <h2>직접 확인할 순서</h2>
+    <ol>
+      <li>두 창이 <b>연결됨</b>이면 한쪽에서 메시지를 보내세요. 양쪽에 같은 메시지가 한 번씩 표시되어야 합니다.</li>
+      <li>받은 쪽에서 <b>안 읽은 수</b>를 누르면 1 이상입니다. <b>읽음 처리</b> 후에는 0이 됩니다.</li>
+      <li>보낸 쪽에서 <b>대화 불러오기</b>를 누르면 읽음 여부도 갱신됩니다. 읽음 알림을 실시간으로 푸시하는 방식은 아닙니다.</li>
+      <li><b>연결 끊기 → 연결하기 → 대화 불러오기</b>로 이전 대화가 남아 있는지 확인하세요.</li>
+      <li>빈 메시지 또는 1000자를 넘는 메시지를 보내면 오류가 표시되고 저장되지 않아야 합니다.</li>
+    </ol>
+    <p class="muted">JWT는 페이지 메모리에만 보관합니다. 새로고침하면 접속 정보가 사라집니다. 생성한 테스트 데이터는 로컬 DB에 남으며, 이 파일은 운영 JAR에 포함되지 않습니다.</p>
+  </section>
+</main>
+
+<template id="panel-template">
+  <section class="panel">
+    <div class="row"><h2 class="title"></h2><span class="status">준비 전</span></div>
+    <div class="identity muted">테스트 준비 버튼을 눌러주세요.</div>
+    <div class="row" style="margin-top:12px">
+      <button class="connect" disabled>연결하기</button>
+      <button class="disconnect" disabled>연결 끊기</button>
+      <button class="history" disabled>대화 불러오기</button>
+    </div>
+    <div class="messages" role="log" aria-live="polite"></div>
+    <textarea class="input" placeholder="메시지를 입력하세요. Enter로 전송, Shift+Enter로 줄바꿈" disabled></textarea>
+    <div class="row">
+      <button class="send primary" disabled>메시지 보내기</button>
+      <button class="unread" disabled>안 읽은 수</button>
+      <button class="read" disabled>읽음 처리</button>
+    </div>
+    <p class="count muted">안 읽은 수: 확인 전</p>
+    <div class="error" role="alert"></div>
+  </section>
+</template>
+
+<script>
+'use strict';
+const $ = (selector, root = document) => root.querySelector(selector);
+const actors = [
+  { label: 'A · 옷 주인', role: 'owner' },
+  { label: 'B · 빌리는 사람', role: 'wearer' }
+];
+let apiBase;
+let roomId;
+
+function getLocalOrigin() {
+  const url = new URL($('#api').value);
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) || url.protocol !== 'http:') {
+    throw new Error('로컬 HTTP 주소만 사용할 수 있습니다. 예: http://localhost:8080');
+  }
+  return url.origin;
+}
+
+async function request(path, actor, options = {}) {
+  const headers = new Headers(options.headers);
+  if (actor?.token) headers.set('Authorization', 'Bearer ' + actor.token);
+  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
+  let response;
+  try {
+    response = await fetch(apiBase + path, { ...options, headers, credentials: 'omit', redirect: 'error', signal: AbortSignal.timeout(15000) });
+  } catch (error) {
+    throw new Error('API 연결 실패. 앱 실행 상태·포트·local 프로필을 확인하세요. (' + error.message + ')');
+  }
+  const text = await response.text();
+  let data;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!response.ok) throw new Error(path + ' → HTTP ' + response.status + ': ' + (data?.message || String(data || response.statusText)));
+  return data;
+}
+
+function escapeHeader(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/:/g, '\\c');
+}
+
+function sendFrame(socket, command, headers = {}, body = '') {
+  if (socket.readyState !== WebSocket.OPEN) throw new Error('먼저 채팅에 연결하세요.');
+  if (body) headers = { ...headers, 'content-length': new TextEncoder().encode(body).length };
+  const lines = Object.entries(headers).map(([key, value]) => key + ':' + (command === 'CONNECT' ? String(value) : escapeHeader(value)));
+  socket.send(command + '\n' + lines.join('\n') + '\n\n' + body + '\0');
+}
+
+function setConnected(actor, connected, label) {
+  actor.connected = connected;
+  $('.status', actor.panel).textContent = label;
+  $('.status', actor.panel).classList.toggle('live', connected);
+  $('.connect', actor.panel).disabled = !actor.token || connected;
+  $('.disconnect', actor.panel).disabled = !connected;
+  $('.send', actor.panel).disabled = !connected;
+  $('.input', actor.panel).disabled = !connected;
+}
+
+function appendMessage(actor, message) {
+  const entry = document.createElement('div');
+  entry.className = 'message' + (message.senderNickname === actor.nickname ? ' mine' : '');
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.textContent = [message.senderNickname, '#' + message.messageId, message.sentAt, message.isRead ? '읽음' : '안 읽음'].join(' · ');
+  const text = document.createElement('div');
+  text.className = 'text';
+  text.textContent = message.message;
+  entry.append(meta, text);
+  const messages = $('.messages', actor.panel);
+  messages.append(entry);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function connect(actor) {
+  if (actor.connected) return Promise.resolve();
+  if (actor.socket && actor.socket.readyState !== WebSocket.CLOSED) actor.socket.close();
+  setConnected(actor, false, '연결 중…');
+  const socket = new WebSocket(apiBase.replace(/^http:/, 'ws:') + '/ws/chat', ['v12.stomp']);
+  actor.socket = socket;
+  let buffer = '';
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { socket.close(); reject(new Error('채팅 연결 시간 초과. 최신 앱과 Redis 실행 상태를 확인하세요.')); }, 10000);
+    socket.onopen = () => sendFrame(socket, 'CONNECT', {
+      'accept-version': '1.2', host: new URL(apiBase).host, Authorization: 'Bearer ' + actor.token, 'heart-beat': '0,0'
+    });
+    socket.onmessage = async event => {
+      buffer += typeof event.data === 'string' ? event.data : await event.data.text();
+      let end;
+      while ((end = buffer.indexOf('\0')) !== -1) {
+        const raw = buffer.slice(0, end).replace(/^\s+/, '').replace(/\r\n/g, '\n');
+        buffer = buffer.slice(end + 1);
+        const boundary = raw.indexOf('\n\n');
+        const lines = (boundary === -1 ? raw : raw.slice(0, boundary)).split('\n');
+        const command = lines.shift();
+        const headers = {};
+        for (const line of lines) {
+          const colon = line.indexOf(':');
+          if (colon !== -1) headers[line.slice(0, colon)] = line.slice(colon + 1).replace(/\\([nrc\\])/g, (_, code) => ({n:'\n', r:'\r', c:':', '\\':'\\'}[code]));
+        }
+        const body = boundary === -1 ? '' : raw.slice(boundary + 2);
+        if (command === 'CONNECTED') {
+          sendFrame(socket, 'SUBSCRIBE', { id: 'chat-messages', destination: '/topic/chat/' + roomId });
+          sendFrame(socket, 'SUBSCRIBE', { id: 'chat-errors', destination: '/user/queue/chat/errors' });
+          clearTimeout(timer);
+          setConnected(actor, true, '연결됨');
+          resolve();
+        } else if (command === 'MESSAGE') {
+          try {
+            const message = JSON.parse(body);
+            if (headers.subscription === 'chat-errors') $('.error', actor.panel).textContent = message.code + ': ' + message.message;
+            else appendMessage(actor, message);
+          } catch { $('.error', actor.panel).textContent = '서버 응답을 읽을 수 없습니다.'; }
+        } else if (command === 'ERROR') {
+          const error = new Error('채팅 연결 거부: ' + (headers.message || body));
+          $('.error', actor.panel).textContent = error.message;
+          clearTimeout(timer);
+          reject(error);
+        }
+      }
+      if (!buffer.trim()) buffer = ''; // Ignore heartbeat-only input.
+    };
+    socket.onerror = () => {
+      clearTimeout(timer);
+      const error = new Error('WebSocket 연결 실패. 앱 주소와 /ws/chat 설정을 확인하세요.');
+      $('.error', actor.panel).textContent = error.message;
+      reject(error);
+    };
+    socket.onclose = () => {
+      clearTimeout(timer);
+      if (actor.socket === socket) setConnected(actor, false, '연결 끊김');
+      reject(new Error('채팅 연결이 종료됐습니다.'));
+    };
+  });
+}
+
+async function history(actor) {
+  const messages = await request('/chat/room/' + roomId + '/messages', actor);
+  $('.messages', actor.panel).replaceChildren();
+  messages.forEach(message => appendMessage(actor, message));
+}
+
+async function unread(actor) {
+  const rooms = await request('/chat/rooms', actor);
+  const room = rooms.find(value => value.roomId === roomId);
+  $('.count', actor.panel).textContent = '안 읽은 수: ' + (room?.unreadCount ?? '?') + ' · 마지막 메시지: ' + (room?.lastMessage || '없음');
+}
+
+function action(actor, work) {
+  return async () => {
+    $('.error', actor.panel).textContent = '';
+    try { await work(); } catch (error) { $('.error', actor.panel).textContent = error.message; }
+  };
+}
+
+for (const actor of actors) {
+  actor.panel = $('#panel-template').content.firstElementChild.cloneNode(true);
+  $('.title', actor.panel).textContent = actor.label;
+  $('#panels').append(actor.panel);
+  $('.connect', actor.panel).onclick = action(actor, () => connect(actor));
+  $('.disconnect', actor.panel).onclick = () => actor.socket?.close();
+  $('.history', actor.panel).onclick = action(actor, () => history(actor));
+  $('.unread', actor.panel).onclick = action(actor, () => unread(actor));
+  $('.read', actor.panel).onclick = action(actor, async () => {
+    await request('/chat/room/' + roomId + '/read', actor, { method: 'PATCH' });
+    await history(actor);
+    await unread(actor);
+  });
+  const send = action(actor, () => {
+    const input = $('.input', actor.panel);
+    sendFrame(actor.socket, 'SEND', { destination: '/app/chat/send', 'content-type': 'application/json' }, JSON.stringify({ roomId, message: input.value }));
+    input.value = '';
+  });
+  $('.send', actor.panel).onclick = send;
+  $('.input', actor.panel).onkeydown = event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); send(); }
+  };
+}
+
+$('#prepare').onclick = async () => {
+  $('#prepare').disabled = true;
+  $('#setup-error').textContent = '';
+  try {
+    apiBase = getLocalOrigin();
+    $('#api').disabled = true;
+    $('#fixture').textContent = '테스트 계정을 만들고 로그인하는 중…';
+    const suffix = Date.now().toString(36) + '-' + crypto.randomUUID().slice(0, 6);
+    for (const actor of actors) {
+      actor.email = 'chat-' + actor.role + '-' + suffix + '@example.test';
+      actor.nickname = (actor.role === 'owner' ? '테스트옷주인-' : '테스트문의자-') + suffix;
+      actor.password = crypto.randomUUID() + 'Aa1!';
+      await request('/auth/register', null, { method: 'POST', body: JSON.stringify({ email: actor.email, nickname: actor.nickname, password: actor.password, address: '채팅 로컬 테스트' }) });
+      const login = await request('/auth/login', null, { method: 'POST', body: JSON.stringify({ email: actor.email, password: actor.password }) });
+      if (!login.accessToken) throw new Error('로그인 응답에 accessToken이 없습니다.');
+      actor.token = login.accessToken;
+      $('.identity', actor.panel).textContent = actor.email;
+    }
+    $('#fixture').textContent = '테스트 상품과 채팅방을 만드는 중…';
+    const date = offset => { const d = new Date(); d.setDate(d.getDate() + offset); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'); };
+    const product = new FormData();
+    for (const [key, value] of Object.entries({ title: '채팅 테스트용 옷 ' + suffix, description: '로컬 채팅 수동 테스트용 상품', size: 'M', sex: '공용', latitude: 35.1796, longitude: 129.0756, detailAddress: '테스트 장소', price: 1000, startDate: date(0), endDate: date(1), category: 'top' })) product.append(key, value);
+    const board = await request('/board/create', actors[0], { method: 'POST', body: product });
+    const room = await request('/chat/room', actors[1], { method: 'POST', body: JSON.stringify({ boardId: board.id }) });
+    if (!room.roomId) throw new Error('채팅방 응답에 roomId가 없습니다.');
+    roomId = room.roomId;
+    $('#accounts').hidden = false;
+    $('#credentials').textContent = actors.map(actor => actor.label + '\n이메일: ' + actor.email + '\n비밀번호: ' + actor.password).join('\n\n');
+    for (const actor of actors) {
+      for (const selector of ['.history', '.unread', '.read', '.connect']) $(selector, actor.panel).disabled = false;
+    }
+    await Promise.all(actors.map(actor => connect(actor)));
+    $('#fixture').textContent = '준비 완료 · 상품 ID ' + board.id + ' · 채팅방 ID ' + roomId + '\n2. 아래 두 창에서 메시지를 주고받으세요.';
+    $('#prepare').textContent = '테스트 준비 완료';
+  } catch (error) {
+    $('#setup-error').textContent = error.message;
+    $('#fixture').textContent = '준비 중단. 로컬 API 실행 상태를 확인하고 페이지를 새로고침한 뒤 다시 시도하세요. 일부 테스트 데이터는 DB에 남을 수 있습니다.';
+  }
+};
+
+window.addEventListener('beforeunload', () => actors.forEach(actor => actor.socket?.close()));
+</script>
+</body>
+</html>

@@ -17,13 +17,13 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     void deleteByChatRoomIn(List<ChatRoom> chatRooms);
 
     // 채팅방의 메시지 내역 (시간순)
-    List<ChatMessage> findByChatRoomIdOrderBySentAtAsc(Long chatRoomId);
+    List<ChatMessage> findByChatRoomIdOrderBySentAtAscIdAsc(Long chatRoomId);
 
     // 채팅방의 안 읽은 메시지 수 (상대방이 보낸 것만)
     long countByChatRoomIdAndSenderIdNotAndIsReadFalse(Long chatRoomId, Long myUserId);
 
     // 채팅방의 가장 최근 메시지
-    Optional<ChatMessage> findTopByChatRoomIdOrderBySentAtDesc(Long chatRoomId);
+    Optional<ChatMessage> findTopByChatRoomIdOrderBySentAtDescIdDesc(Long chatRoomId);
 
     // 안 읽은 메시지 읽음 처리 (상대방이 보낸 것만)
     @Modifying

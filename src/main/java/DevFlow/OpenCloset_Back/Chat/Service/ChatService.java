@@ -9,12 +9,12 @@ import DevFlow.OpenCloset_Back.Chat.ChatRoom.Repository.ChatRoomRepository;
 import DevFlow.OpenCloset_Back.Chat.dto.res.ChatMessageResponseDto;
 import DevFlow.OpenCloset_Back.Chat.dto.res.ChatRoomResponseDto;
 import DevFlow.OpenCloset_Back.Chat.dto.res.WearerListResponseDto;
+import DevFlow.OpenCloset_Back.Chat.Event.ChatMessageSentEvent;
 import DevFlow.OpenCloset_Back.User.User_Repository.UserRepository;
 import DevFlow.OpenCloset_Back.User.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,8 +30,8 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatAccessService chatAccessService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 채팅방 생성 (또는 기존 방 반환)
@@ -39,7 +39,10 @@ public class ChatService {
      */
     @Transactional
     public ChatRoomResponseDto createRoom(Long boardId, User wearer) {
-        Board board = boardRepository.findById(boardId)
+        if (boardId == null || boardId <= 0) {
+            throw new IllegalArgumentException("유효한 게시물 ID가 필요합니다.");
+        }
+        Board board = boardRepository.findByIdForChatUpdate(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시물을 찾을 수 없습니다. id=" + boardId));
 
         User seller = board.getSeller();
@@ -83,13 +86,9 @@ public class ChatService {
      */
     @Transactional(readOnly = true)
     public List<ChatMessageResponseDto> getMessages(Long roomId, User user) {
-        ChatRoom room = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. id=" + roomId));
+        chatAccessService.requireParticipant(roomId, user.getEmail());
 
-        // 본인이 참여한 채팅방인지 확인
-        validateRoomParticipant(room, user);
-
-        return chatMessageRepository.findByChatRoomIdOrderBySentAtAsc(roomId).stream()
+        return chatMessageRepository.findByChatRoomIdOrderBySentAtAscIdAsc(roomId).stream()
                 .map(this::toMessageResponseDto)
                 .toList();
     }
@@ -99,10 +98,7 @@ public class ChatService {
      */
     @Transactional
     public void markAsRead(Long roomId, User user) {
-        ChatRoom room = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. id=" + roomId));
-
-        validateRoomParticipant(room, user);
+        chatAccessService.requireParticipant(roomId, user.getEmail());
 
         chatMessageRepository.markAllAsRead(roomId, user.getId());
     }
@@ -138,7 +134,10 @@ public class ChatService {
      */
     @Transactional
     public void confirmDeal(Long boardId, Long wearerId, User user) {
-        Board board = boardRepository.findById(boardId)
+        if (boardId == null || boardId <= 0 || wearerId == null || wearerId <= 0) {
+            throw new IllegalArgumentException("유효한 게시물과 대여 상대 ID가 필요합니다.");
+        }
+        Board board = boardRepository.findByIdForChatUpdate(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시물을 찾을 수 없습니다. id=" + boardId));
 
         if (!board.getSeller().getId().equals(user.getId())) {
@@ -147,6 +146,10 @@ public class ChatService {
 
         if (!"대여가능".equals(board.getStatus())) {
             throw new IllegalArgumentException("'대여가능' 상태의 게시물만 거래를 확정할 수 있습니다. 현재 상태: " + board.getStatus());
+        }
+
+        if (!chatRoomRepository.existsByBoardIdAndWearerId(boardId, wearerId)) {
+            throw new IllegalArgumentException("해당 상품의 채팅 참여자만 대여 상대로 확정할 수 있습니다.");
         }
 
         User buyer = userRepository.findById(wearerId)
@@ -163,31 +166,18 @@ public class ChatService {
      * 메시지 전송 (WebSocket + Redis + MySQL)
      */
     @Transactional
-    public ChatMessageResponseDto sendMessage(Long roomId, Long senderId, String message) {
-        ChatRoom room = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. id=" + roomId));
+    public ChatMessageResponseDto sendMessage(Long roomId, String senderEmail, String message) {
+        if (message == null || message.isBlank() || message.length() > 1000) {
+            throw new IllegalArgumentException("메시지는 공백이 아닌 1~1000자여야 합니다.");
+        }
+        ChatRoom room = chatAccessService.requireParticipant(roomId, senderEmail);
+        User sender = room.getSeller().getEmail().equals(senderEmail) ? room.getSeller() : room.getWearer();
 
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다. id=" + senderId));
-
-        // 본인이 참여한 채팅방인지 확인
-        validateRoomParticipant(room, sender);
-
-        // 1. MySQL에 저장
         ChatMessage chatMessage = new ChatMessage(room, sender, message);
         chatMessageRepository.save(chatMessage);
-
-        // 2. 응답 DTO 생성
         ChatMessageResponseDto responseDto = toMessageResponseDto(chatMessage);
-
-        // 3. Redis Pub/Sub로 발행
-        String channel = "chat:room:" + roomId;
-        redisTemplate.convertAndSend(channel, responseDto);
-
-        // 4. WebSocket으로 구독자에게 전달
-        messagingTemplate.convertAndSend("/topic/chat/" + roomId, responseDto);
-
-        log.info("메시지 전송 - roomId: {}, sender: {}, message: '{}'", roomId, sender.getNickname(), message);
+        eventPublisher.publishEvent(new ChatMessageSentEvent(roomId, responseDto));
+        log.debug("채팅 메시지 저장 - roomId: {}, messageId: {}", roomId, responseDto.getMessageId());
 
         return responseDto;
     }
@@ -196,13 +186,6 @@ public class ChatService {
     // 내부 헬퍼 메서드
     // ============================================
 
-    private void validateRoomParticipant(ChatRoom room, User user) {
-        Long userId = user.getId();
-        if (!room.getSeller().getId().equals(userId) && !room.getWearer().getId().equals(userId)) {
-            throw new IllegalArgumentException("본인이 참여한 채팅방만 접근할 수 있습니다.");
-        }
-    }
-
     private ChatRoomResponseDto toRoomResponseDto(ChatRoom room, User currentUser) {
         // 상대방 결정 (내가 seller면 상대방은 wearer, 반대도 마찬가지)
         User opponent = room.getSeller().getId().equals(currentUser.getId())
@@ -210,7 +193,7 @@ public class ChatService {
                 : room.getSeller();
 
         // 마지막 메시지
-        String lastMessage = chatMessageRepository.findTopByChatRoomIdOrderBySentAtDesc(room.getId())
+        String lastMessage = chatMessageRepository.findTopByChatRoomIdOrderBySentAtDescIdDesc(room.getId())
                 .map(ChatMessage::getMessage)
                 .orElse(null);
 

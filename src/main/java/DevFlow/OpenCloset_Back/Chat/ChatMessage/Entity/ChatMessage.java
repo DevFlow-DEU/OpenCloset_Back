@@ -26,7 +26,7 @@ public class ChatMessage {
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String message;
 
     // 읽음 여부 (기본값: false)
