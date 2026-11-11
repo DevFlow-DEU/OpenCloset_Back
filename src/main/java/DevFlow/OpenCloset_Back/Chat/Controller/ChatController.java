@@ -24,60 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Chat API", description = """
-        상품별 옷 주인(seller)과 문의자(wearer)의 1:1 채팅 API입니다.
-        REST 요청은 상단 Authorize에 access token을 입력해 인증합니다.
-
-        ### 프론트 연결 순서
-        1. 문의자가 `POST /chat/room`에 `boardId`를 보내 `roomId`를 받습니다.
-        2. WebSocket에 연결하고 STOMP CONNECT로 JWT를 인증합니다.
-        3. 해당 방과 개인 오류 채널을 구독한 뒤 REST로 이전 대화를 조회합니다.
-        4. 수신 메시지를 `messageId` 기준으로 중복 제거해 화면에 합칩니다.
-        5. 현재 대화를 실제로 보고 있을 때 읽음 처리 API를 호출합니다.
-
-        ### 실시간 채팅 (WebSocket / STOMP)
-        Swagger UI의 Try it out은 REST API용입니다. 아래 STOMP 명령은 STOMP 클라이언트에서 실행합니다.
-
-        | 용도 | 경로 / 값 |
-        | --- | --- |
-        | 순수 WebSocket 연결 | `ws://localhost:8080/ws/chat` (HTTPS 환경은 `wss://서버주소/ws/chat`) |
-        | SockJS 연결 | `http://localhost:8080/ws/chat` (실행 환경의 서버 주소 사용) |
-        | CONNECT 헤더 | `Authorization: Bearer <accessToken>` |
-        | 메시지 수신 SUBSCRIBE | `/topic/chat/{roomId}` |
-        | 메시지 전송 SEND | `/app/chat/send` |
-        | 개인 입력 오류 SUBSCRIBE | `/user/queue/chat/errors` |
-
-        WebSocket JWT는 HTTP 요청 헤더나 URL 쿼리가 아니라 **STOMP CONNECT 헤더**에 넣습니다.
-        방 참여자만 전송·구독할 수 있으며, 와일드카드 구독과 `/topic/...` 직접 전송은 허용하지 않습니다.
-
-        SEND 본문 (`content-type: application/json`, 스키마: `ChatSendRequestDto`):
-        ```json
-        {"roomId": 1, "message": "이 옷 사이즈 어떻게 되나요?"}
-        ```
-        발신자는 JWT 사용자로 결정합니다. 기존 `senderId` 필드는 호환용이며 보내도 무시합니다.
-        메시지는 공백만 있는 내용이 아니어야 하며 길이는 1~1000자입니다.
-        DB 저장 커밋 후 Redis를 거쳐 전달하며, 실시간 수신 본문은 `ChatMessageResponseDto`와 같습니다.
-        Redis 전달에 실패해도 저장된 메시지는 REST 대화 내역에서 조회할 수 있습니다.
-
-        ### 오류 처리
-        - 내용 검증 실패: 개인 오류 채널에 아래 JSON을 전송하며 연결은 유지합니다 (`ChatError` 스키마).
-        ```json
-        {"code": "INVALID_MESSAGE", "message": "메시지는 공백이 아닌 1~1000자여야 합니다."}
-        ```
-        - 접속·구독·전송 권한 오류: STOMP ERROR의 `message` 헤더와 텍스트 본문에 아래 코드를 보내고 연결을 종료합니다.
-
-        | 코드 | 의미 |
-        | --- | --- |
-        | `UNAUTHORIZED` | JWT 누락·오류·만료. 토큰 갱신 또는 재로그인 후 연결 |
-        | `FORBIDDEN` | 방 비참여자, 허용되지 않은 구독·전송 경로 또는 명령 |
-        | `INVALID_REQUEST` | 잘못된 JSON·방 ID, 요청 크기 초과 등 |
-        | `CHAT_UNAVAILABLE` | 존재하지 않는 방 또는 요청 처리 실패 |
-
-        ### 조회·읽음·재연결
-        대화 조회만으로 읽음 처리되지 않습니다. PATCH 읽음 처리 후 대화 내역과 방 목록을 재조회합니다.
-        현재 읽음 여부와 안 읽은 수의 실시간 푸시는 제공하지 않습니다.
-        재연결 시 다시 구독하고 이전 대화를 조회해 누락된 메시지를 보완합니다.
-        """)
+@Tag(name = "Chat API", description = "상품별 1:1 채팅 관련 API")
 @SecurityRequirement(name = "JWT")
 @RestController
 @RequiredArgsConstructor
@@ -107,10 +54,33 @@ public class ChatController {
             """;
 
     @Operation(summary = "채팅방 생성 (또는 기존 방 반환) (로직 구현됨 ✅)",
-            description = "특정 상품의 옷 주인과 로그인한 문의자의 1:1 채팅방을 생성합니다. "
-                    + "같은 boardId + 문의자 조합의 방이 있으면 기존 방을 반환합니다. "
-                    + "seller는 상품 작성자, wearer는 로그인 사용자로 지정되며 본인 상품에는 문의할 수 없습니다. "
-                    + "응답의 roomId를 대화 조회와 WebSocket 구독에 사용합니다. JWT 토큰이 필요합니다.")
+            description = """
+                    특정 상품의 옷 주인과 로그인한 문의자의 1:1 채팅방을 생성합니다.
+                    같은 boardId + 문의자 조합의 방이 있으면 기존 방을 반환합니다.
+                    seller는 상품 작성자, wearer는 로그인 사용자로 지정되며 본인 상품에는 문의할 수 없습니다.
+                    응답의 roomId를 대화 조회와 실시간 구독에 사용합니다. JWT 토큰이 필요합니다.
+
+                    #### 채팅방 생성 후 실시간 연결
+                    Swagger의 Try it out에서는 위 REST 요청을 실행할 수 있습니다. 메시지 전송·수신은 별도의 STOMP 클라이언트를 사용합니다.
+
+                    1. WebSocket `/ws/chat`에 연결합니다. 운영 주소는 `wss://opencloset.jihongeek.com/ws/chat`, 로컬 주소는 `ws://localhost:8080/ws/chat`입니다.
+                       SockJS 클라이언트는 같은 경로의 `https://` 또는 `http://` 주소를 사용합니다.
+                    2. **STOMP CONNECT 헤더**에 `Authorization: Bearer <accessToken>`을 설정합니다. Swagger의 Authorize는 REST 요청에만 적용됩니다.
+                    3. `/topic/chat/{roomId}`와 개인 오류 채널 `/user/queue/chat/errors`를 구독한 뒤 메시지 내역 조회 API를 호출합니다.
+                    4. `/app/chat/send`에 아래 JSON을 `content-type: application/json`으로 전송합니다.
+
+                    ```json
+                    {"roomId": 1, "message": "이 옷 사이즈 어떻게 되나요?"}
+                    ```
+
+                    전송 본문은 `ChatSendRequestDto`, 수신 본문은 `ChatMessageResponseDto` 스키마를 참고합니다.
+                    발신자는 JWT 사용자로 결정하며 senderId는 보내지 않아도 됩니다. 메시지는 공백이 아닌 1~1000자여야 합니다.
+                    방 참여자만 전송·구독할 수 있으며 와일드카드 구독과 `/topic/...` 직접 전송은 허용하지 않습니다.
+
+                    내용 검증 실패는 개인 오류 채널에 `ChatError` (`code: INVALID_MESSAGE`)로 전달하며 연결을 유지합니다.
+                    인증·권한·요청 오류는 STOMP ERROR의 message 헤더와 본문에 `UNAUTHORIZED` (토큰 오류), `FORBIDDEN` (접근 금지),
+                    `INVALID_REQUEST` (요청 오류), `CHAT_UNAVAILABLE` (방 없음·처리 실패)를 전달한 뒤 연결을 종료합니다.
+                    """)
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "채팅방 생성 또는 기존 방 조회 성공",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ChatRoomResponseDto.class),
@@ -155,7 +125,8 @@ public class ChatController {
     @Operation(summary = "채팅 메시지 내역 조회 (로직 구현됨 ✅)",
             description = "참여한 방의 대화 전체를 전송 시각 오름차순으로 반환하며, 시각이 같으면 messageId 순으로 정렬합니다. "
                     + "대화가 없으면 빈 배열입니다. 조회만으로 읽음 처리되지 않으며 별도의 PATCH 읽음 처리 API를 호출해야 합니다. "
-                    + "실시간 수신 메시지와 같은 응답 형식입니다. JWT 토큰이 필요합니다.")
+                    + "실시간 수신 메시지와 같은 응답 형식입니다. 재연결 시 방을 다시 구독한 뒤 이 API로 누락된 대화를 조회하고 "
+                    + "messageId 기준으로 중복을 제거합니다. 실시간 전달에 실패해도 DB에 저장된 메시지는 조회할 수 있습니다. JWT 토큰이 필요합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "메시지 내역 조회 성공",
                     content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ChatMessageResponseDto.class)),
