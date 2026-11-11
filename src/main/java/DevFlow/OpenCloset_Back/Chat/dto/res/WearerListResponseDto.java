@@ -11,12 +11,12 @@ public class WearerListResponseDto {
     @Schema(description = "채팅방 ID", example = "1")
     private Long roomId;
 
-    @Schema(description = "wearer(빌리려는 사람) 유저 ID", example = "7")
+    @Schema(description = "문의자 사용자 ID. 거래 확정 API의 wearerId로 사용", example = "7")
     private Long wearerId;
 
     @Schema(description = "wearer 닉네임", example = "김철수")
     private String wearerNickname;
 
-    @Schema(description = "wearer 프로필 이미지")
+    @Schema(description = "wearer 프로필 이미지", example = "https://opencloset.jihongeek.com/images/default_profile.png", nullable = true)
     private String wearerProfileImage;
 }

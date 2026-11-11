@@ -9,6 +9,7 @@ import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import java.security.Principal;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Slf4j
 @Controller
@@ -39,6 +40,9 @@ public class ChatMessageHandler {
         return new ChatError("INVALID_MESSAGE", exception.getMessage());
     }
 
-    public record ChatError(String code, String message) {
+    @Schema(description = "메시지 내용 검증 실패 시 /user/queue/chat/errors로 수신하는 개인 오류. 연결은 유지됩니다.")
+    public record ChatError(
+            @Schema(description = "입력 검증 오류 코드", example = "INVALID_MESSAGE", allowableValues = {"INVALID_MESSAGE"}) String code,
+            @Schema(description = "오류 안내", example = "메시지는 공백이 아닌 1~1000자여야 합니다.") String message) {
     }
 }

@@ -25,15 +25,15 @@ public class ChatRoomResponseDto {
     @Schema(description = "상대방 닉네임", example = "홍길동")
     private String opponentNickname;
 
-    @Schema(description = "상대방 프로필 이미지")
+    @Schema(description = "상대방 프로필 이미지", example = "https://opencloset.jihongeek.com/images/default_profile.png", nullable = true)
     private String opponentProfileImage;
 
-    @Schema(description = "마지막 메시지 내용", example = "사이즈 어떻게 되나요?")
+    @Schema(description = "마지막 메시지 내용. 대화가 없으면 null", example = "사이즈 어떻게 되나요?", nullable = true)
     private String lastMessage;
 
-    @Schema(description = "안 읽은 메시지 수", example = "3")
+    @Schema(description = "로그인 사용자가 아직 읽지 않은 상대방 메시지 수. 본인이 보낸 메시지는 제외", example = "3", minimum = "0")
     private int unreadCount;
 
-    @Schema(description = "채팅방 생성일")
+    @Schema(description = "채팅방 생성 시각 (시간대 오프셋 없는 서버 LocalDateTime)", example = "2026-11-11T10:00:00")
     private LocalDateTime createdAt;
 }

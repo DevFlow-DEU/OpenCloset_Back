@@ -1,12 +1,14 @@
 package DevFlow.OpenCloset_Back.Config;
 
+import DevFlow.OpenCloset_Back.Chat.Controller.ChatMessageHandler;
+import DevFlow.OpenCloset_Back.Chat.dto.req.ChatSendRequestDto;
+import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,6 +25,14 @@ public class SwaggerConfig {
                 .scheme("bearer")
                 .bearerFormat("JWT"));
 
+        // STOMP payloads are not HTTP operations, so expose their DTOs explicitly in Schemas.
+        ModelConverters.getInstance().read(ChatSendRequestDto.class).forEach(components::addSchemas);
+        ModelConverters.getInstance().read(ChatMessageHandler.ChatError.class).forEach(components::addSchemas);
+
+        Server currentServer = new Server();
+        currentServer.setUrl("/");
+        currentServer.setDescription("현재 접속한 서버");
+
         Server prodServer = new Server();
         prodServer.setUrl("https://opencloset.jihongeek.com");
         prodServer.setDescription("운영 서버 (HTTPS)");
@@ -38,6 +48,7 @@ public class SwaggerConfig {
                         .version("v1.0.0"))
                 .addSecurityItem(securityRequirement)
                 .components(components)
+                .addServersItem(currentServer)
                 .addServersItem(prodServer)
                 .addServersItem(localServer);
     }
