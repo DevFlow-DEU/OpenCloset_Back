@@ -8,6 +8,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import DevFlow.OpenCloset_Back.Login.Dto.req.KakaoSignupRequestDto;
+import DevFlow.OpenCloset_Back.User.dto.res.UserResponeDto;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,4 +66,13 @@ public class KakaoLoginController {
 
         return ResponseEntity.ok(responseDto);
     }
+
+    @Operation(summary = "카카오 회원가입 추가 정보 등록", description = "콜백에서 받은 JWT로 닉네임, 주소, 비밀번호와 비밀번호 확인을 등록합니다. 완료 후 기존 토큰을 계속 사용합니다.")
+    @PostMapping("/register")
+    public ResponseEntity<UserResponeDto> completeSignup(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody KakaoSignupRequestDto request) {
+        return ResponseEntity.ok(kakaoService.completeSignup(userDetails.getUsername(), request));
+    }
+
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LoginResponseDto {
+    private boolean signupRequired;
     private String email;
     private String nickname;
     private String message;

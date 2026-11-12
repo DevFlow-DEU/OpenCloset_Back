@@ -34,6 +34,11 @@ public class User {
     @Column(nullable = true)
     private String profileImage; // 프로필 이미지 경로 (URL)
 
+    @Column(unique = true)
+    private String kakaoId;
+
+    private Boolean kakaoSignupCompleted;
+
     public String getProfileImage() {
         if (this.profileImage != null && !this.profileImage.startsWith("http")) {
             return "https://opencloset.jihongeek.com" + this.profileImage;

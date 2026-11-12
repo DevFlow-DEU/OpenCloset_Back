@@ -15,7 +15,11 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Optional;
+import DevFlow.OpenCloset_Back.Login.Dto.req.KakaoSignupRequestDto;
+import DevFlow.OpenCloset_Back.User.dto.res.UserResponeDto;
+import org.springframework.transaction.annotation.Transactional;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -75,7 +79,11 @@ public class KakaoService {
         return userInfo;
     }
 
+    @Transactional
     public LoginResponseDto loginOrRegister(KakaoUserInfoDto kakaoUserInfo) {
+        if (kakaoUserInfo == null || kakaoUserInfo.getId() == null) {
+            throw new IllegalArgumentException("카카오 사용자 ID가 필요합니다.");
+        }
         String kakaoId = String.valueOf(kakaoUserInfo.getId());
         String email = kakaoUserInfo.getEmail();
 
@@ -88,19 +96,20 @@ public class KakaoService {
             nickname = "카카오유저_" + kakaoId;
         }
 
-        Optional<User> existingUser = userRepository.findByEmail(email);
-
-        User curUser;
-        if (existingUser.isPresent()) {
-            curUser = existingUser.get();
-            log.info("기존 카카오 사용자 로그인 - email: {}", email);
-        } else {
+        User curUser = userRepository.findByKakaoId(kakaoId).orElse(null);
+        if (curUser == null) {
+            if (userRepository.findByEmail(email).isPresent()) {
+                throw new IllegalArgumentException("이미 등록된 이메일입니다. 기존 계정으로 로그인해주세요.");
+            }
             curUser = new User();
             curUser.setEmail(email);
+            curUser.setKakaoId(kakaoId);
+            curUser.setKakaoSignupCompleted(false);
 
             // 닉네임 중복 방지 확인
-            if (userRepository.findByNickname(nickname).isPresent()) {
-                nickname = nickname + "_" + kakaoId.substring(0, 4);
+            String baseNickname = nickname;
+            while (userRepository.findByNickname(nickname).isPresent()) {
+                nickname = baseNickname + "_" + UUID.randomUUID().toString().substring(0, 8);
             }
             curUser.setNickname(nickname);
 
@@ -119,12 +128,55 @@ public class KakaoService {
 
         refreshTokenService.saveRefreshToken(curUser.getEmail(), refreshToken);
 
-        return new LoginResponseDto(
+        LoginResponseDto response = new LoginResponseDto(
                 curUser.getEmail(),
                 curUser.getNickname(),
                 "카카오 로그인 성공",
                 accessToken,
                 refreshToken,
                 curUser.getProfileImage());
+        response.setSignupRequired(!Boolean.TRUE.equals(curUser.getKakaoSignupCompleted()));
+        return response;
     }
+
+    @Transactional
+    public UserResponeDto completeSignup(String email, KakaoSignupRequestDto request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        if (user.getKakaoId() == null) {
+            throw new IllegalArgumentException("카카오 회원만 이용할 수 있습니다.");
+        }
+        if (Boolean.TRUE.equals(user.getKakaoSignupCompleted())) {
+            throw new IllegalArgumentException("이미 추가 정보 등록을 완료했습니다.");
+        }
+        if (request.getNickname() == null || request.getNickname().isBlank()
+                || request.getNickname().trim().length() > 255) {
+            throw new IllegalArgumentException("닉네임은 1~255자로 입력해주세요.");
+        }
+        if (request.getAddress() == null || request.getAddress().isBlank()
+                || request.getAddress().trim().length() > 255) {
+            throw new IllegalArgumentException("주소는 1~255자로 입력해주세요.");
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 8
+                || request.getPassword().isBlank()
+                || request.getPassword().getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new IllegalArgumentException("비밀번호는 8자 이상, UTF-8 기준 72바이트 이하로 입력해주세요.");
+        }
+        if (!request.getPassword().equals(request.getPasswordConfirm())) {
+            throw new IllegalArgumentException("비밀번호 확인이 일치하지 않습니다.");
+        }
+        String nickname = request.getNickname().trim();
+        userRepository.findByNickname(nickname).ifPresent(existing -> {
+            if (!Objects.equals(existing.getId(), user.getId())) {
+                throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            }
+        });
+        user.setNickname(nickname);
+        user.setAddress(request.getAddress().trim());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setKakaoSignupCompleted(true);
+        userRepository.save(user);
+        return new UserResponeDto(user.getEmail(), user.getAddress(), user.getNickname(), user.getProfileImage());
+    }
+
 }
